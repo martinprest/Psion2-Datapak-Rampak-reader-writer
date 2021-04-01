@@ -22,9 +22,9 @@ Components:
 
 1× Breadboard
 
-**Photo of the Rampak reader-writer**
+**Photo of the Rampak reader-writer**<br>
 <img src="Psion2_Rampak_read_write.jpg" width="600">
 
-**Schematic**
+**Schematic**<br>
 <img src="Psion2_datapak_read_write_schematic.PNG" width="600">
 
