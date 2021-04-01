@@ -10,4 +10,12 @@ I wrote software for the Arduino and PC. The PC software (in Python), allows pac
 
 The circuitry is very simple, just connecting of I/O lines to the datapak, I made a datapak connector which is just a 2x8 pin header, with stripboard to widen the connections to fit either side of the centre of a breadboard.
 
+Components:
+
+1× Arduino Nano or similar
+1× Header pins 2x8 pins 2.54 mm pitch - used for datapak connector
+1x small piece of stripboard - used for datapak connector
+1× Psion organiser II Datapak or Rampak - Datapak for read or Rampak for read/write 
+1× Breadboard
+
 ![image](Psion2_Rampak_read_write.jpg)
