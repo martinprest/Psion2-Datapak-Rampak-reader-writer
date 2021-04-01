@@ -24,5 +24,6 @@ The circuitry is very simple, just connecting of I/O lines to the datapak, I mad
 <img src="Psion2_datapak_read_write_schematic.PNG" width="600">
 
 **datapak connector**<br>
+This is made from headers soldered to stripboard to widen the connections for the breadboard, the centre line of the stripboard is cut to not short the connections<br>
 <img src="datapak connector 1a.jpg" alt="connector from above" height="300">
 <img src="datapak connector 2a.jpg" alt="connector from below" height="300">
