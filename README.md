@@ -10,17 +10,12 @@ I wrote software for the Arduino and PC. The PC software (in Python), allows pac
 
 The circuitry is very simple, just connecting of I/O lines to the datapak, I made a datapak connector which is just a 2x8 pin header, with stripboard to widen the connections to fit either side of the centre of a breadboard.
 
-Components:
-
-1× Arduino Nano or similar
-
-1× Header pins 2x8 pins 2.54 mm pitch - used for datapak connector
-
-1x small piece of stripboard - used for datapak connector
-
-1× Psion organiser II Datapak or Rampak - Datapak for read or Rampak for read/write
-
-1× Breadboard
+**Components**<br>
+1× Arduino Nano or similar<br>
+1× Header pins 2x8 pins 2.54 mm pitch - used for datapak connector<br>
+1x small piece of stripboard - used for datapak connector<br>
+1× Psion organiser II Datapak or Rampak - Datapak for read or Rampak for read/write<br>
+1× Breadboard<br>
 
 **Photo of the Rampak reader-writer**<br>
 <img src="Psion2_Rampak_read_write.jpg" width="600">
@@ -28,3 +23,6 @@ Components:
 **Schematic**<br>
 <img src="Psion2_datapak_read_write_schematic.PNG" width="600">
 
+**datapak connector**<br>
+<img src="datapak connector 1a.jpg" width="400">
+<img src="datapak connector 2a.jpg" width="400">
