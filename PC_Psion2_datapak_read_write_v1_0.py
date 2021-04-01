@@ -5,6 +5,8 @@ Datapak/Rampak Reader/Writer for Psion Organiser II
 -------------------------------------------------------------------------
 created by Martin Prest 2021
 
+https://github.com/martinprest/Psion2-Datapak-Rampak-reader-writer
+
 Uses linear or paged addressing, choose with paged_addr boolean variable below
 packs that use segmented addressing are not supported
 segmented addressing requires sending a segment address to the pack first
