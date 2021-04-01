@@ -24,5 +24,5 @@ The circuitry is very simple, just connecting of I/O lines to the datapak, I mad
 <img src="Psion2_datapak_read_write_schematic.PNG" width="600">
 
 **datapak connector**<br>
-<img src="datapak connector 1a.jpg" alt="connector 1" width="400">
-<img src="datapak connector 2a.jpg" alt="connector 2" width="400">
+<img src="datapak connector 1a.jpg" alt="connector 1" height="300">
+<img src="datapak connector 2a.jpg" alt="connector 2" height="400">
