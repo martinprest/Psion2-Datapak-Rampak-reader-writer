@@ -30,6 +30,6 @@ Psion Organiser II pack images can be created, viewed or edited using [Jaap's OP
 
 # Datapak connector
 This is made from headers soldered to stripboard to widen the connections for the breadboard, the centre line of the stripboard is cut to not short the connections.
-The lower pins were pushed deeper through the plastic to make them longer.
+The lower pins were pushed deeper through the plastic to make them longer.<br>
 <img src="datapak connector 1a.jpg" alt="connector from above" height="300">
 <img src="datapak connector 2a.jpg" alt="connector from below" height="300">
