@@ -9,3 +9,5 @@ I used an Arduino to read and write to a Psion II Rampak, these packs contain a 
 I wrote software for the Arduino and PC. The PC software (in Python), allows pack images to be transferred between the PC and the Rampak, via the Arduino USB serial port.
 
 The circuitry is very simple, just connecting of I/O lines to the datapak, I made a datapak connector which is just a 2x8 pin header, with stripboard to widen the connections to fit either side of the centre of a breadboard.
+
+![image](Psion2_Rampak_read_write.jpg)
