@@ -22,7 +22,7 @@ Components:
 
 1× Breadboard
 
-![photo of breadboard](Psion2_Rampak_read_write.jpg)
+<img src="Psion2_Rampak_read_write.jpg" width="100">
 
 **Schematic**
 ![schematic](Psion2_datapak_read_write_schematic.PNG)
