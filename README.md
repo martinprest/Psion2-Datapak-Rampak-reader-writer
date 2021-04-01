@@ -12,14 +12,14 @@ The circuitry is very simple, just connecting of I/O lines to the datapak, I mad
 
 Psion Organiser II pack images can be created, viewed or edited using [Jaap's OPK editor](https://www.jaapsch.net/psion/opkedit.htm).
 
-# Components<br>
-1× Arduino Nano or similar<br>
-1× Header pins 2x8 pins 2.54 mm pitch - used for datapak connector<br>
-1x small piece of stripboard - used for datapak connector<br>
-1× Psion organiser II Datapak or Rampak - Datapak for read or Rampak for read/write<br>
-1× Breadboard<br>
+# Components
+- 1× Arduino Nano or similar
+- 1× Header pins 2x8 pins 2.54 mm pitch - used for datapak connector
+- 1x small piece of stripboard - used for datapak connector<br>
+- 1× Psion organiser II Datapak or Rampak - Datapak for read or Rampak for read/write<br>
+- 1× Breadboard<br>
 
-# Photo of the Rampak reader-writer<br>
+# Photo of the Rampak reader-writer
 <img src="Psion2_Rampak_read_write.jpg" width="600">
 
 # Schematic
