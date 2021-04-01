@@ -23,7 +23,7 @@ Psion Organiser II pack images can be created, viewed or edited using [Jaap's OP
 - 1× Breadboard
 
 # Photo of the Rampak reader-writer
-<img src="Psion2_Rampak_read_write.jpg" width="600">
+<img src="Psion2_Rampak_read_write_1.jpg" width="600">
 
 # Schematic
 <img src="Psion2_datapak_read_write_schematic.PNG" width="600">
