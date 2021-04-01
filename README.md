@@ -1,4 +1,7 @@
 # Psion2-Datapak-Rampak-reader-writer
+
+The Psion Organiser II is a handheld 8-bit micro from the 1980s, it was sold to the public as a personal digital assistant (PDA) and was widely used in industry, over 1/2 million were made. The PDA versions have a diary, can store information and can be programmed to perform calculations and manipulate data, there are even some simple games for it. Its PDA functions have since been replaced by the smartphone, so alot of these Psions eventually found their way into the back of a drawer somewhere. However, these devices are as tough as a brick, so if you find one and put a fresh 9 V battery in, it's very likely to work. The same cannot be said of many devices that followed it. The Psion II was a ground-breaking device in its time, and it still has an active following of dedicated users. Lots of info can be found on the wbsite by Jaap Scherphuis: [Jaap's Psion2 site](https://www.jaapsch.net/psion/index.htm)
+
 Arduino and Python code to transfer psion2 pack images between a PC and an Arduino
 
 I used an Arduino to read and write to a Psion II Rampak, these packs contain a memory chip, two counters and some logic. The packs require a 5 V supply, so are well suited to an Arduino Nano which also uses 5 V, powered from USB.
@@ -15,9 +18,9 @@ Psion Organiser II pack images can be created, viewed or edited using [Jaap's OP
 # Components
 - 1× Arduino Nano or similar
 - 1× Header pins 2x8 pins 2.54 mm pitch - used for datapak connector
-- 1x small piece of stripboard - used for datapak connector<br>
-- 1× Psion organiser II Datapak or Rampak - Datapak for read or Rampak for read/write<br>
-- 1× Breadboard<br>
+- 1x small piece of stripboard - used for datapak connector
+- 1× Psion organiser II Datapak or Rampak - Datapak for read or Rampak for read/write
+- 1× Breadboard
 
 # Photo of the Rampak reader-writer
 <img src="Psion2_Rampak_read_write.jpg" width="600">
