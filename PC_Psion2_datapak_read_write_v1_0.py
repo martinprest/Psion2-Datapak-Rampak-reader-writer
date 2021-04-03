@@ -206,14 +206,12 @@ def ReadPak():
         print("(PC) Datapak read to file has ended")
 
 loop = True
-size = 0
 inp = ''
 
 try:
     with serial.Serial(SerialPort, BaudRate, timeout=2) as ser:
         print("Reading:",ser.name)
         while loop:
-            addr = 0
             time.sleep(0.001) # 1 ms delay to slow loop down
                     
             if ser.inWaiting(): # message from Arduino waiting in serial input buffer
@@ -254,5 +252,5 @@ try:
                             WritePak()
                         inp = ''
 except:
-    print("\nError! Maybe Arduino not connected to COM3?")
+    print("\nError! Maybe Arduino not connected to serial port?")
         
