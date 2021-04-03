@@ -201,7 +201,7 @@ def ReadPak():
         addr_hh = (addr & 0xFF0000) >> 16 # high byte, mask & shift right 16 bits
         addr_h = (addr & 0xFF00) >> 8 # middle byte, mask & shift right 8 bits
         addr_l = addr & 0xFF # low byte
-        f_out.write(bytes([addr_hh,addr_h,addr_l])) # write size, includes 2x 0xFF at end
+        f_out.write(bytes([addr_hh,addr_h,addr_l])) # write size, includes 0xFF bytes at end
         print("") # newline  
         print("(PC) Datapak read to file has ended")
 
