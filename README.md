@@ -14,17 +14,19 @@ The circuitry is very simple, just connecting of I/O lines to the datapak, I mad
 Be careful if you modify the software as it is possible to damage a datapak/rampak or the Arduino if both set the data pins to output at the same time.
 Also, make sure you connect the pack the correct way around and only insert or remove it when prompted by the software.
 
-The software presents the user with a simple menu of options:<br>
+The software presents the user with a simple text menu of options:<br>
 "Select a command: e-erase, r-read pack, w-write pack, 0-print page 0, 1-print page 1, m-write test record to main or press x to exit"<br>
-Sending a single character command via the serial link will perform the command.
-Some of these commands can be used via the Arduino serial monitor, or similar terminal, but the read and write commands expect the PC to echo the data back to verify it and control data flow, this is coded into the python software. Filenames for transfer are entered directly into the Python code before it is run using the infile and outfile variables.
-- e - erases the first 2 pages, i.e. the first 512 bytes of the pack. (full pack formatting is best done by placing the pack in the Organiser)
+Sending a single character via the serial link will select the command.
+Some of these commands can be used via the Arduino serial monitor, or similar terminal, but the read and write commands expect the data to be echoed back to verify it and control data flow, this is coded into the software. Filenames for transfer are entered directly into the Python code before it is run using the infile and outfile variables near the top of the program listing.
+
+**Description of the the commands:**
+- e - erases the first 2 pages, i.e. the first 512 bytes of the pack, by setting all bits high. (full rampak formatting is best done using the Organiser in the normal way)
 - r - reads data from the pack to the outfile on the PC. Reads until a certain number of 0xFF bytes are read (currently 3) to signify that the end of the pack has been reached.
-- w - writes data from the PC infile to the pack. Modifies the pack ID bytes (to rampack or adjusts size) if certain flags are set in the Python program.
-- 0 - prints the contents of the first 256 bytes of the pack as a hex dump with ascii characters, the zero page, addresses 0x0 to 0xFF
-- 1 - prints the contents of the second 256 bytes of the pack as a hex dump with ascii characters, addresses 0x100 to 0x1FF
-- m - adds a test record with the text "TEST DATA" to the main data file
-- x - exits the menu and allows the pack to be removed
+- w - writes data from the PC infile to the pack. Modifies the pack ID bytes (to set as a rampack or adjust pack size) if certain flags are set in the Python program.
+- 0 - prints the contents of the first 256 bytes of the pack as a hex dump with ascii characters, the zero page, addresses 0x0 to 0xFF.
+- 1 - prints the contents of the second 256 bytes of the pack as a hex dump with ascii characters, addresses 0x100 to 0x1FF.
+- m - adds a test record with the text "TEST DATA" to the main data file.
+- x - exits the menu and allows the pack to be removed.
 
 Psion Organiser II pack images can be created, viewed or edited using [Jaap's OPK editor](https://www.jaapsch.net/psion/opkedit.htm).
 
