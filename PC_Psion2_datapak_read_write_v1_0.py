@@ -197,7 +197,7 @@ def ReadPak():
                 if addr % 0x08 == 0: # if remainder of addr div 8 is zero, newline
                     print("") # newline
         f_out.seek(3) # move back to size bytes in PC outfile, byte 3: 0, 1, 2, 3
-        addr -= 1 # decrement addr pointer to final non 0xFF byte
+        addr -= 1 # decrement addr pointer
         addr_hh = (addr & 0xFF0000) >> 16 # high byte, mask & shift right 16 bits
         addr_h = (addr & 0xFF00) >> 8 # middle byte, mask & shift right 8 bits
         addr_l = addr & 0xFF # low byte
