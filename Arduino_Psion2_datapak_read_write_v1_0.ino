@@ -349,10 +349,10 @@ bool writePakSerial(word numBytes) { // write PC serial data to pack
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void eraseBytes(word addr, word numBytes) { // eraze numBytes, starting at addr - no pages yet
+void eraseBytes(word addr, word numBytes) { // erase numBytes, starting at addr
   setAddress(addr);
   bool done_ok = false;
-  byte addr_low = 0;
+  byte addr_low = addr & 0xFF;
   Serial.print("(Ard) Erasing:");
   for (word i = 0; i <= numBytes; i++) { // loop through numBytes to write
     done_ok = writePakByte(0xFF); // write 0xFF
