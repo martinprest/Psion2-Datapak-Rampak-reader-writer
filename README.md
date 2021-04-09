@@ -6,13 +6,16 @@ I used an Arduino to read and write to a Psion II Rampak, these packs contain a 
 
 - Uses linear or paged addressing, larger segmented packs are not supported.
 - Datapaks can be read from but not written to (because these packs contain EPROMs which require UV light to erase them and a 21 V supply to write).
+- Pack image files for read/write use the standard OPK format of the Psion Developer software, for more info see [Martin Reid's Developer manual](https://sites.google.com/site/martin2reid/psion-organiser-ii/manuals/developer?authuser=0).
+
+Psion Organiser II pack images can be created, viewed or edited using [Jaap's OPK editor](https://www.jaapsch.net/psion/opkedit.htm).
 
 I wrote software for the Arduino and PC. The PC software (in Python), allows pack images to be transferred between the PC and the Rampak, via the Arduino USB serial port.
 
 The circuitry is very simple, just connecting of I/O lines to the datapak, I made a datapak connector which is just a 2x8 pin header, with stripboard to widen the connections to fit either side of the centre of a breadboard.
 
 Be careful if you modify the software as it is possible to damage a datapak/rampak or the Arduino if both set the data pins to output at the same time.
-Also, make sure you connect the pack the correct way around and only insert or remove it when prompted by the software.
+Also, make sure you connect the pack the correct way around (if you unclip the cover of the rampak/datapak some of these packs have pin 1 indicated by a red triangle) and only insert or remove it when prompted by the software.
 
 The software presents the user with a simple text menu of options:<br>
 "Select a command: e-erase, r-read pack, w-write pack, 0-print page 0, 1-print page 1, m-write test record to main or press x to exit"<br>
@@ -27,8 +30,6 @@ Some of these commands can be used via the Arduino serial monitor, or similar te
 - 1 - prints the contents of the second 256 bytes of the pack as a hex dump with ascii characters, addresses 0x100 to 0x1FF.
 - m - adds a test record with the text "TEST DATA" to the main data file.
 - x - exits the menu and allows the pack to be removed.
-
-Psion Organiser II pack images can be created, viewed or edited using [Jaap's OPK editor](https://www.jaapsch.net/psion/opkedit.htm).
 
 # Components
 - Arduino Nano or similar
