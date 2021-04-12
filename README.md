@@ -15,7 +15,7 @@ I wrote software for the Arduino and PC. The PC software (in Python), allows pac
 The circuitry is very simple, just connecting of I/O lines to the datapak, I made a datapak connector which is just a 2x8 pin header, with stripboard to widen the connections to fit either side of the centre of a breadboard.
 
 Be careful if you modify the software as it is possible to damage a datapak/rampak or the Arduino if both set the data pins to output at the same time.
-Also, make sure you connect the pack the correct way around (if you unclip the cover of the rampak/datapak some of these packs have pin 1 indicated by a red triangle) and only insert or remove it when prompted by the software.
+Also, make sure you connect the pack the correct way around (see pinout below, also if you unclip the cover of the rampak/datapak some of these packs have pin 1 indicated by a red triangle) and only insert or remove a pack when prompted by the software.
 
 The software presents the user with a simple text menu of options:<br>
 "Select a command: e-erase, r-read pack, w-write pack, 0-print page 0, 1-print page 1, m-write test record to main or press x to exit"<br>
@@ -49,3 +49,6 @@ This is made from headers soldered to stripboard to widen the connections for th
 The lower pins were pushed through the plastic to make them longer for soldering and the plastic was removed afterwards.<br>
 <img src="datapak connector 1a.jpg" alt="connector from above" height="300">
 <img src="datapak connector 2a.jpg" alt="connector from below" height="300">
+
+# Datapak pinout
+<img src="datapak_pinout.PNG" width="600">
