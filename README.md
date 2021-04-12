@@ -1,6 +1,8 @@
 # Psion2-Datapak-Rampak-reader-writer
-<img src="Psion2_open_thumb.jpg" width="100">
-The Psion Organiser II is a handheld 8-bit micro from the 1980s, it was sold to the public as a personal digital assistant (PDA) and was widely used in industry, over 1/2 million were made. The PDA models have a diary, can store information and can be programmed to perform calculations and manipulate data, there are even some simple games for it. Its PDA functions have since been replaced by the smartphone, so alot of these Psions eventually found their way into the back of a drawer somewhere. However, these devices are as tough as a brick, so if you find one and put a fresh 9 V battery in, it's very likely to work. The same cannot be said of many devices that followed it. The Psion II was a ground-breaking device in its time, and it still has an active following of dedicated users. Lots of info can be found on the wbsite by Jaap Scherphuis: [Jaap's Psion2 site](https://www.jaapsch.net/psion/index.htm)
+<img align="left" src="Psion2_open_thumb.jpg" width="100">
+The Psion Organiser II is a handheld 8-bit micro from the 1980s, it was sold to the public as a personal digital assistant (PDA) and was widely used in industry, over 1/2 million were made. The PDA models have a diary, can store information and can be programmed to perform calculations and manipulate data, there are even some simple games for it. Its PDA functions have since been replaced by the smartphone, so alot of these Psions eventually found their way into the back of a drawer somewhere. However, these devices are as tough as a brick, so if you find one and put a fresh 9 V battery in, it's very likely to work. The same cannot be said of many devices that followed it. The Psion II was a ground-breaking device in its time, and it still has an active following of dedicated users. 
+
+Lots of info about the Psion II can be found on the wbsite by Jaap Scherphuis: [Jaap's Psion2 site](https://www.jaapsch.net/psion/index.htm)
 
 I used an Arduino to read and write to a Psion II Rampak, these packs contain a memory chip, two counters and some logic. The packs require a 5 V supply, so are well suited to an Arduino Nano which also uses 5 V, powered from USB.
 
@@ -15,7 +17,7 @@ I wrote software for the Arduino and PC. The PC software (in Python), allows pac
 The circuitry is very simple, just connecting of I/O lines to the datapak, I made a datapak connector which is just a 2x8 pin header, with stripboard to widen the connections to fit either side of the centre of a breadboard.
 
 Be careful if you modify the software as it is possible to damage a datapak/rampak or the Arduino if both set the data pins to output at the same time.
-Also, make sure you connect the pack the correct way around (see pinout below, also if you unclip the cover of the rampak/datapak some of these packs have pin 1 indicated by a red triangle) and only insert or remove a pack when prompted by the software.
+Also, make sure you connect the pack the correct way around (see pinout below, also if you unclip the cover of the rampak/datapak some of these packs have pin 1 indicated by a red triangle) and only insert or remove a pack when prompted by the software. Be aware that you use this software and information at your own risk.
 
 The software presents the user with a simple text menu of options:<br>
 "Select a command: e-erase, r-read pack, w-write pack, 0-print page 0, 1-print page 1, m-write test record to main or press x to exit"<br>
@@ -51,4 +53,4 @@ The lower pins were pushed through the plastic to make them longer for soldering
 <img src="datapak connector 2a.jpg" alt="connector from below" height="300">
 
 # Datapak pinout
-<img src="datapak_pinout.PNG" width="600">
+<img alt="Boris' pinout" src="datapak_pinout.PNG" width="600">
