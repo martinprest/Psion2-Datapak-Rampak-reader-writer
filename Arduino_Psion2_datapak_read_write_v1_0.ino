@@ -1,5 +1,4 @@
 /*
-
 -------------------------------------------------------------------------
 Datapak/Rampak Reader/Writer for Psion Organiser II
 -------------------------------------------------------------------------
@@ -27,6 +26,14 @@ const byte PGM_N = 18;
 const byte data_pin[] = {2, 3, 4, 5, 6, 7, 8, 9}; // pins D0 to D7 on Datapak
 
 const boolean paged_addr = true; // true for paged addressing, false for linear addressing
+
+// ensure Baud rate matches the python PC software
+//const long BaudRate = 9600; // default
+//const long BaudRate = 19200; // faster
+//const long BaudRate = 57600; // faster
+const long BaudRate = 115200; // faster
+
+const byte numFFchk = 3; // number of consecutive 0xFF bytes to signify the end of the pack, I tried 2 but then found a pack with 2x 0xFF bytes in it.
 
 byte CLK_val = 0; // flag to indicate CLK state
 
@@ -58,8 +65,8 @@ void ArdDataPinsToOutput() { // set Arduino data pins to output
 
 byte readByte() { // Reads Arduino data pins, assumes pins are in the input state
   byte data = 0;
-  for (int8_t i = 7; i >= 0; i -= 1) { // int8 type to allow -ve 8 bit numbers, so loop can end
-    data = (data << 1) + digitalRead(data_pin[i]); // read each pin and shift pin values into data
+  for (int8_t i = 7; i >= 0; i -= 1) { // int8 type to allow -ve 8 bit numbers, so loop can end at -1
+    data = (data << 1) + digitalRead(data_pin[i]); // read each pin and shift pin values into data, starting at MSB
   }
   return data;
 }
@@ -68,7 +75,7 @@ byte readByte() { // Reads Arduino data pins, assumes pins are in the input stat
 
 void writeByte(byte data) { // Writes to Arduino data pins, assumes pins are in the output state
   for (byte i = 0; i <= 7; i += 1) {
-    digitalWrite(data_pin[i], data & 1); // write bit at LSB to data_pin[pin]
+    digitalWrite(data_pin[i], data & 1); // write data bits to data_pin[i], starting at LSB 
     data = data >> 1; // shift data right, so can AND with 1 to read next bit
   }
 }
@@ -76,9 +83,9 @@ void writeByte(byte data) { // Writes to Arduino data pins, assumes pins are in 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void resetAddrCounter() { // Resets pack counters
-  digitalWrite(CLK, LOW); // start with clock low, SCK is LSB of address
+  digitalWrite(CLK, LOW); // start with clock low, CLK is LSB of address
   delayShort();
-  CLK_val = 0; // clear CLK flag
+  CLK_val = 0; // set CLK state low
   digitalWrite(MR, HIGH); // reset address counter - asynchronous, doesn't require SS_N or OE_N
   delayShort();
   digitalWrite(MR, LOW);
@@ -112,8 +119,8 @@ void nextPage() { // toggles PGM low, then high to advance page counter
 
 void setAddress(word addr) { // resets counter then toggles counters to reach address, <word> so max address is 64k
   resetAddrCounter(); // reset counters
-  byte page = highByte(addr); // high byte of address
-  byte addr_low = lowByte(addr); // low byte of address
+  byte page = (addr & 0xFF00) >> 8; // high byte of address
+  byte addr_low = addr & 0xFF; // low byte of address
   if (paged_addr) { // if paged addressing
     for (byte p = 0; p < page; p++){nextPage();} // call nextPage, until page reached
     for (byte a = 0; a < addr_low; a++) {nextAddress();} // call nextAddress, until addr_low reached  
@@ -163,7 +170,7 @@ void printPageContents(byte page) { // set address to start of page and print co
     }
     else { // linear addressing
       for (byte a = 0; p <= 0xFF; p++) {
-        nextAddress(); // call nextAddress() for every address in page
+        nextAddress(); // call nextAddress() for every address in page, including 0xFF - so will advance to 0x100
       }
     }
   }
@@ -224,12 +231,12 @@ word readAll(byte output) { // read all pack data, output if selected and return
   packOutputAndSelect(); // Enable pack data bus output then select it
 
   if (output == 2) { // tell PC to read data
-    Serial.println("XXRead"); // send "Read" to PC to tell it to receive read data
+    Serial.println("XXRead"); // send "XXRead" to PC to tell it to receive read data
   }  
 
   bool quit = false;
   byte end_chk = 0;
-  byte numFFchk = 3;
+  //byte numFFchk = 3; // now set globally at start of program
   byte addr_low = 0; // only goes to 255, then wraps around to zero
   word addr_tot = 0; // total
   while  (quit == false) {
@@ -243,17 +250,17 @@ word readAll(byte output) { // read all pack data, output if selected and return
       Serial.write(dat); // send byte only
       unsigned long t = millis();
       while (!(Serial.available() > 0)) { // wait for data echo back, if no data: loop until there is, or timeout
-        if (millis()-t > 1000) { // check time
-          for (byte i = 0; i <= numFFchk; i++) { // tell PC to stop reading data by sending numFFchk FF bytes
+        if (millis()-t > 1000) { // if timeout
+          for (byte i = 0; i <= numFFchk; i++) { // tell PC to stop reading data by sending numFFchk 0xFF bytes
           Serial.write(0xFF);
           }
           Serial.println("(Ard) Timeout!");
           return false;
         }
-      }
+      } // end of while loop delay for data echo back from PC
       byte datr = Serial.read(); // read byte value from serial
-      if (datr != dat) {
-          for (byte i = 0; i <= numFFchk; i++) { // tell PC to stop reading data by sending numFFchk FF bytes
+      if (datr != dat) { // if echo datr doesn't match dat sent
+          for (byte i = 0; i <= numFFchk; i++) { // tell PC to stop reading data by sending numFFchk 0xFF bytes
           Serial.write(0xFF); 
           }
         Serial.println("(Ard) Read data not verified by PC!");
@@ -264,7 +271,7 @@ word readAll(byte output) { // read all pack data, output if selected and return
       end_chk++; // increase consecutive 0xFF count
     }
     else end_chk = 0; // reset 0xFF count if non 0xFF byte found
-    if (end_chk == numFFchk) quit = true; // quit if numFFend 0xFF bytes found, i.e. end of pack reached
+    if (end_chk == numFFchk) quit = true; // quit if numFFchk 0xFF bytes found, i.e. end of pack reached
     if ((paged_addr == true) && (addr_low == 0xFF)) { // if using paged addressing and end of page reached, go to next page, addr_low will wrap around to zero
       nextPage();
     }
@@ -319,14 +326,14 @@ bool writePakSerial(word numBytes) { // write PC serial data to pack
   byte addr_low = 0;
   for (addr_tot = 0; addr_tot < numBytes; addr_tot++) { // addr_tot will be 1 less than numBytes as addr starts from zero, numBytes starts from 1
     unsigned long t = millis();
-    while (!(Serial.available() > 0)) { // if no data, loop until there is, or timeout
-      if (millis()-t > 1000) { // check time
+    while (!(Serial.available() > 0)) { // if no data from PC, loop until there is, or timeout
+      if (millis()-t > 1000) { // if timeout
         Serial.println("(Ard) Timeout!");
         return false;
       }
     }
     byte datw = Serial.read(); // read byte value from serial
-    Serial.write(datw); // write data back to PC to check and control data flow
+    Serial.write(datw); // write data back to PC to verify and control data flow
     done_w = writePakByte(datw); // write value to current memory address
     if (done_w == false) {
       Serial.println("(Ard) Write byte failed!");
@@ -352,7 +359,7 @@ bool writePakSerial(word numBytes) { // write PC serial data to pack
 void eraseBytes(word addr, word numBytes) { // erase numBytes, starting at addr
   setAddress(addr);
   bool done_ok = false;
-  byte addr_low = addr & 0xFF;
+  byte addr_low = addr & 0xFF; // low byte of addr
   Serial.print("(Ard) Erasing:");
   for (word i = 0; i <= numBytes; i++) { // loop through numBytes to write
     done_ok = writePakByte(0xFF); // write 0xFF
@@ -362,7 +369,7 @@ void eraseBytes(word addr, word numBytes) { // erase numBytes, starting at addr
     }
     if (addr_low == 0xFF) { // if end of page reached, go to next page, addr_low will wrap around to zero
       if (paged_addr == true) nextPage(); // if using paged addressing go to next page
-      Serial.print("."); // "." printed for each page erased
+      Serial.print("."); // "." printed for each end of page
     }
     nextAddress(); 
     addr_low++;  
@@ -377,7 +384,7 @@ void eraseBytes(word addr, word numBytes) { // erase numBytes, starting at addr
 
 void WriteMainRec() { // write record to main
   word endAddr = readAll(false); // false (0) - don't print output, just find 1st empty address
-  if (readAddr(endAddr, false/* no ouput */) == 0xFF) { // move to start address & read it, if value is 0xFF write record, also prints value at address
+  if (readAddr(endAddr, false/* no ouput */) == 0xFF) { // move to start address & read it, if value is 0xFF write record
     char main[] = "--TEST DATA"; // Main record text with leading "--" for length & identifier bytes
     byte len_main = sizeof(main)-1;// not including 0 at end
     main[0] = len_main-2; // record text length identifier byte
@@ -403,10 +410,7 @@ void WriteMainRec() { // write record to main
 
 void setup() {
   
-  //Serial.begin(9600); // fast enough?
-  //Serial.begin(19200); // faster
-  //Serial.begin(57600); // faster
-  Serial.begin(115200); // faster
+  Serial.begin(BaudRate); // open serial, BaudRate is global const set at top of program
   
   //Serial.print("LED_BUILTIN is ");
   //Serial.println(LED_BUILTIN);
@@ -486,7 +490,7 @@ void loop() { // command loop
     if (key == 'w') { // write pack from PC data
       bool write_ok = false;
       Serial.println("(Ard) Write Serial data to pack");
-      char str[] = "XXWrite"; // Check for "Write" from PC to indicate following data is write data
+      char str[] = "XXWrite"; // Check for "XXWrite" from PC to indicate following data is write data
       if (Serial.find(str,7) == true) { // waits until timeout for Write to signal start of data
         byte numBytes[2]; // byte array to store pack image size
         byte bytes_read = Serial.readBytes(numBytes,2); // read 2 bytes for pack size, will need to be 3 if pack > 64kB !
@@ -497,7 +501,7 @@ void loop() { // command loop
         Serial.println(buf);      
       }
       else {
-        Serial.println("(Ard) No Write to begin data");
+        Serial.println("(Ard) No XXWrite to begin data");
       }
       if (write_ok == false) {
         Serial.println("(Ard) Write failed!");        
@@ -505,9 +509,9 @@ void loop() { // command loop
     }
     
     if (key == 'r') { // read pack and send to PC
-      word endAddr = readAll(2); // 0 - no output, 1 - print data, 2 - dump data
+      word endAddr = readAll(2); // 0 - no output, 1 - print data, 2 - dump data to serial
       char buf[40];
-      sprintf(buf, "(Ard) Size of pack is: %04x bytes", endAddr); // end address is same as size as address starts from 0, size starts from 1
+      sprintf(buf, "(Ard) Size of pack is: 0x%04x bytes", endAddr); // end address is same as size as address starts from 0, size starts from 1
       Serial.println(buf);
     }
     
