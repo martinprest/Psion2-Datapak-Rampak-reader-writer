@@ -36,7 +36,7 @@ Some of these commands can be used via the Arduino serial monitor, or similar te
 # Components
 - Arduino Nano or similar
 - Header pins 2.54 mm pitch, 1x 2x8 pins and 2x 1x8 pins (used for datapak connector)
-- Small piece of stripboard (used for datapak connector)
+- Small piece of stripboard or perfboard (used for datapak connector)
 - Psion organiser II Datapak or Rampak - Datapak for read or Rampak for read/write
 - Breadboard
 
