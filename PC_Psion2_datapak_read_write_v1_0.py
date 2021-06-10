@@ -40,18 +40,19 @@ fix_pack_size = False
 pack_size_out = 2 # 2*8 = 16 kB
 #pack_size_out = 4 # 4*8 = 32 kB
 
+# file for data write to a pack
 infile = "rampak_colours.opk"
 print("Input filename:",infile)
 f_size = os.path.getsize(infile)
 print(f'(PC) File size (decimal) is: {f_size} bytes')
 
+# file for data read from a pack
 outfile = "datapak_test.opk"
 print("Output filename:",outfile)
 f_out_open = False
 
 def WritePak():
     print("(PC) Write")
-    read_file = False
     f_in = open(infile,'rb')
     data = f_in.read(3) # Should be "OPK"
     header = data.decode()
