@@ -529,7 +529,7 @@ void WriteMainRec(bool output) { // write record to main
     program_low = true;
   }
   if (readAddr(endAddr, /* output */ true) == 0xFF) { // move to start address & read it, if value is 0xFF write record
-    char main[] = "--The rain in Spain stays mainly on the plain"; // Main record text with leading "--" for length & identifier bytes
+    char main[] = "--TEST"; // Main record text with leading "--" for length & identifier bytes
     byte len_main = sizeof(main)-1;// not including 0 at end
     main[0] = len_main-2; // record text length identifier byte
     main[1] = 0x90; // MAIN file identifier byte
