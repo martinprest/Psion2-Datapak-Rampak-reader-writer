@@ -40,7 +40,7 @@ Some of these commands can be used via the Arduino serial monitor, or similar te
 - Breadboard
 - for datpak write: NPN transistor, PNP transistor, 3x resistors, 2x PP3 connectors, 2x PP3 9 V batteries
 
-# Photo of the Rampak reader-writer
+# Photo of the Datapak/Rampak reader-writer
 <img src="Psion2_Rampak_read_write_1.jpg" width="600">
 
 # Schematic
