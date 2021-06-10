@@ -4,7 +4,7 @@ The Psion Organiser II is a handheld 8-bit micro from the 1980s, it was sold to 
 
 <br>Lots of info about the Psion II can be found at the website by Jaap Scherphuis: [Jaap's Psion2 site](https://www.jaapsch.net/psion/index.htm)
 
-I used an Arduino to read and write to a Psion II Datapaks and Rampaks, these packs contain a memory chip, two counters and some logic. The packs require a 5 V supply, so are well suited to an Arduino Nano which also uses 5 V, powered from USB.
+I used an Arduino to read and write to a Psion II Datapaks and Rampaks, these packs contain a memory chip, two counters and some logic. The packs require a 5 V supply, so are well suited to an Arduino Nano which also uses 5 V, powered from USB. An optional higher voltage supply (I used 18V) plus a few components can be added to allow writing to Datapaks.
 
 - Uses linear or paged addressing, larger segmented packs are not supported, maximum OPK file size is 64 kB.
 - Rampaks can be read from or written to (bits changed from 1 to 0, or 0 to 1).
