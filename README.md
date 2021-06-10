@@ -7,8 +7,8 @@ The Psion Organiser II is a handheld 8-bit micro from the 1980s, it was sold to 
 I used an Arduino to read and write to a Psion II Datapaks and Rampaks, these packs contain a memory chip, two counters and some logic. The packs require a 5 V supply, so are well suited to an Arduino Nano which also uses 5 V, powered from USB.
 
 - Uses linear or paged addressing, larger segmented packs are not supported, maximum OPK file size is 64 kB.
-- Rampaks can be read from or written to.
-- Datapaks can be read from or written to, but not erased (because these packs contain EPROMs which require UV light to erase them).
+- Rampaks can be read from or written to (bits changed from 1 to 0, or 0 to 1).
+- Datapaks can be read from or written to, but not erased (bits from 1 to 0 only, because these packs contain EPROMs which require UV light to erase them).
 - Pack image files for read/write use the standard OPK format of the Psion Developer software, for more info see [Martin Reid's Developer manual](https://sites.google.com/site/martin2reid/psion-organiser-ii/manuals/developer?authuser=0).
 
 Psion Organiser II pack images can be created, viewed or edited using [Jaap's OPK editor](https://www.jaapsch.net/psion/opkedit.htm), which is at Jaap's webpage, but it can also be used offline.
@@ -28,7 +28,7 @@ Some of these commands can be used via the Arduino serial monitor, or similar te
 - w - writes data from the PC infile to the pack. Modifies the pack ID bytes (to set as a rampack or adjust pack size) if certain flags are set in the Python program.
 - 0 - prints the contents of the first 256 bytes of the pack as a hex dump, the zero page, addresses 0x0 to 0xFF.
 - 1 - prints the contents of the second 256 bytes of the pack as a hex dump, addresses 0x100 to 0x1FF.
-- t - adds a test record with the text "TEST DATA" to the main data file.
+- t - adds a test record with the text "TEST" to the main data file.
 - m - swaps between rampak and datapak modes.
 - x - exits the menu and allows the pack to be removed.
 
