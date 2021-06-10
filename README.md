@@ -23,7 +23,7 @@ The software presents the user with a simple text menu of options. Sending a sin
 Some of these commands can be used via the Arduino serial monitor, or similar terminal, but the read and write commands expect the data to be echoed back to verify it and control data flow, this is coded into the software. Filenames for transfer are entered directly into the Python code before it is run using the infile and outfile variables near the top of the program listing.
 
 **Description of the the commands:**
-- e - (For rampaks) erases the first 2 pages, i.e. the first 512 bytes of the pack, by setting all bits high. (full rampak formatting is best done using the Organiser in the normal way)
+- e - (rampaks only) erases the first 2 pages, i.e. the first 512 bytes of the pack, by setting all bits high. (full rampak formatting is best done using the Organiser in the normal way)
 - r - reads data from the pack to the outfile on the PC. Reads until a certain number of 0xFF bytes are read (currently 3) to signify that the end of the pack has been reached.
 - w - writes data from the PC infile to the pack. Modifies the pack ID bytes (to set as a rampack or adjust pack size) if certain flags are set in the Python program.
 - 0 - prints the contents of the first 256 bytes of the pack as a hex dump, the zero page, addresses 0x0 to 0xFF.
