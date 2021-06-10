@@ -6,12 +6,12 @@ The Psion Organiser II is a handheld 8-bit micro from the 1980s, it was sold to 
 
 I used an Arduino to read and write to a Psion II Rampak, these packs contain a memory chip, two counters and some logic. The packs require a 5 V supply, so are well suited to an Arduino Nano which also uses 5 V, powered from USB.
 
-- Uses linear or paged addressing, larger segmented packs are not supported.
+- Uses linear or paged addressing, larger segmented packs are not supported, maximum OPK file size is 64 kB.
 - Rampaks can be read from or written to.
 - Datapaks can be read from but not written to (because these packs contain EPROMs which require UV light to erase them and a 21 V supply to write).
 - Pack image files for read/write use the standard OPK format of the Psion Developer software, for more info see [Martin Reid's Developer manual](https://sites.google.com/site/martin2reid/psion-organiser-ii/manuals/developer?authuser=0).
 
-Psion Organiser II pack images can be created, viewed or edited using [Jaap's OPK editor](https://www.jaapsch.net/psion/opkedit.htm).
+Psion Organiser II pack images can be created, viewed or edited using [Jaap's OPK editor](https://www.jaapsch.net/psion/opkedit.htm), which is at Jaap's webpage, but it can also be used offline.
 
 I wrote software for the Arduino and PC. The PC software (in Python) allows pack images to be transferred between the PC and the Rampak, via the Arduino USB serial port.
 
