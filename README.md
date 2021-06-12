@@ -26,8 +26,7 @@ Some of these commands can be used via the Arduino serial monitor, or similar te
 - e - (rampaks only) erases the first 2 pages, i.e. the first 512 bytes of the pack, by setting all bits high. (full rampak formatting is best done using the Organiser in the normal way)
 - r - reads data from the pack to the outfile on the PC. Reads until a certain number of 0xFF bytes are read (currently 3) to signify that the end of the pack has been reached.
 - w - writes data from the PC infile to the pack. Modifies the pack ID bytes (to set as a rampack or adjust pack size) if certain flags are set in the Python program.
-- 0 - prints the contents of the first 256 bytes of the pack as a hex dump, the zero page, addresses 0x0 to 0xFF.
-- 1 - prints the contents of the second 256 bytes of the pack as a hex dump, addresses 0x100 to 0x1FF.
+- 0, 1, 2 or 3 - (number n), prints the contents of page n (addresses: 0xn00 to 0xnFF) i.e. 256 bytes of the pack, as a hex dump.
 - t - adds a test record with the text "TEST" to the main data file.
 - m - swaps between rampak and datapak modes.
 - x - exits the menu and allows the pack to be removed.
