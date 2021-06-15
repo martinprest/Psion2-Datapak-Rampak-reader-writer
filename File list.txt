@@ -1,0 +1,19 @@
+Arduino_Psion2_datapak_read_write_v1_0/Arduino_Psion2_datapak_read_write_v1_0.ino	Arduino code for the reader-writer v1_0
+Arduino_Psion2_datapak_read_write_v1_1/Arduino_Psion2_datapak_read_write_v1_1.ino	Arduino code for the reader-writer v1_1 includes datapak write
+LICENSE	GPL-3.0 									License
+PC_Psion2_datapak_read_write_v1_0.py							Python code for the reader-writer V1_0
+PC_Psion2_datapak_read_write_v1_1.py							Python code for the reader-writer V1_1 includes datapak write
+Psion2_Rampak_read_write_1.jpg								Photo of the breadboard with Arduino and Rampak
+Psion2_closed_thumb.jpg									Photo of Psion Organiser II LZ64 closed
+Psion2_datapak_read_write_schematic.PNG							Schematic v1 without datapak write circuit
+Psion2_datapak_read_write_schematic_v2.PNG						Schematic v2 with datapak write circuit
+Psion2_open_thumb.jpg									Photo of Psion Organiser II LZ64 open
+README.md										Markdown description of project
+Read_OPK.py										Python code to read OPK files, gives: ID info, checksum and hex dump
+datapak connector 1a.jpg								Photo of datapak connector from top
+datapak connector 2a.jpg								Photo of datapak connector from bottom
+datapak_pinout.PNG									Schematic showing datapak/rampak pin connections
+gen_bldpack.py										Python code to generate an input file for the Developer BLDPACK command
+gen_opltran.py										Python code to generate an input file for the Developer OPLTRAN command
+opkedit.zip										Jaap's OPK editor
+rampak_colours.opk									Example OPK file for a rampak with main record entries of different colours
