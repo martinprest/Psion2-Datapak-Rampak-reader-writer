@@ -37,14 +37,14 @@ Some of these commands can be used via the Arduino serial monitor, or similar te
 - Small piece of stripboard or perfboard (used for datapak connector)
 - Psion organiser II Datapak or Rampak
 - Breadboard
-- for datpak write: NPN transistor, PNP transistor, 3x resistors, 2x PP3 connectors, 2x PP3 9 V batteries
+- for Datapak write: NPN transistor, PNP transistor, 3x resistors, 2x PP3 connectors, 2x PP3 9 V batteries
 
 # Photo of the Datapak/Rampak reader-writer
 <img src="Psion2_Rampak_read_write_1.jpg" width="600">
 
 # Schematic
 <img src="Psion2_datapak_read_write_schematic_v2.PNG" width="1200">
-Add the optional VPP supply & control if you want to write data to a datapak. R1 limits the current load of the Arduino digital output (D19), Q1 (NPN) pulls the base of Q2 (PNP) low when the Arduino output goes high. R3 limits the current from Q2 emitter-base to Q1 collector-emitter. R2 is a pullup to keep Q2 in the off state until Q1 pulls low. The supply is 2x 9 V PP3 batteries. A zener diode reference in the datapak reduces VPP to the correct voltage for the EPROM, typically about 13 V.
+Add the optional VPP supply & control if you want to write data to a Datapak (not required for Rampaks). R1 limits the current load of the Arduino digital output (D19), Q1 (NPN) pulls the base of Q2 (PNP) low when the Arduino output goes high. R3 limits the current from Q2 emitter-base to Q1 collector-emitter. R2 is a pullup to keep Q2 in the off state until Q1 pulls low. The supply is 2x 9 V PP3 batteries. A zener diode reference in the datapak reduces VPP to the correct voltage for the EPROM, typically about 13 V.
 
 # Datapak connector
 This is made from headers soldered to stripboard to widen the connections for the breadboard, the centre line of the stripboard is cut to not short the connections.
