@@ -35,17 +35,18 @@ SerialPort = 'COM3'
 
 numFFchk = 3 # must be same as Arduino program
 
-set_Rampak_ID = False # if false, leaves ID byte as it is in OPK file
-#set_Rampak_ID = True # if true, modifies ID byte to set pack as a rampak
+#set_Rampak_ID = False # if false, leaves ID byte as it is in OPK file
+set_Rampak_ID = True # if true, modifies ID byte to set pack as a rampak
+set_paged = True # if True, modifies ID byte to set paged addressing
 
-fix_pack_size = False
-#fix_pack_size = True
+#fix_pack_size = False
+fix_pack_size = True
 #pack_size_out = 1 # 1*8 = 8 kB
-pack_size_out = 2 # 2*8 = 16 kB
-#pack_size_out = 4 # 4*8 = 32 kB
+#pack_size_out = 2 # 2*8 = 16 kB
+pack_size_out = 4 # 4*8 = 32 kB
 
 infile = "rampak_colours.opk"
-#infile = "datapak_test_spain.opk"
+
 print("Input filename:",infile)
 f_size = os.path.getsize(infile)
 print(f'(PC) File size (decimal) is: {f_size} bytes')
@@ -103,6 +104,7 @@ def WritePak():
             if addr == 0:
                 if set_Rampak_ID == True:            
                     n = n & 0b11111101 # clear bit 1 - rampak
+                if set_paged == True:
                     n = n | 0b100 # set bit 2 - Paged
                 print(f'0: ID byte: {n:02x}')
             if addr == 1:
