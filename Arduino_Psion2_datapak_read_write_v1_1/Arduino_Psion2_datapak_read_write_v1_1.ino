@@ -17,7 +17,7 @@ max read size is 64k bytes - could be increased, but packs larger than this gene
 v1.0 - April 2021 - reads Datapaks and Rampaks, writes to Rampaks
 works with: PC_Psion2_datapak_read-write_v1_0.py on PC
 
-v1.1 - June 2021 - writes to datapaks
+v1.1 - June 2021 - added option for datapak write mode
 works with: PC_Psion2_datapak_read-write_v1_1.py on PC
 
 */
