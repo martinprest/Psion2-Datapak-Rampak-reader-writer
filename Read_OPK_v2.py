@@ -9,7 +9,20 @@ Created: March 2021
 
 import os
 
-file = "rampak_colours.opk"
+# file = "rampak_colours.opk"
+
+# file = "datapak_test.opk"
+
+file = "comms42.opk"
+# file = "comms42_test.opk"
+
+# file = "blank_test.opk"
+
+# file = "datapak_blank_7e9b.opk"
+
+file = "datapak_blank_7e9b_v2.opk"
+
+# file = "datapak_32k_test.opk"
 
 fid = open(file,'rb')
 f_in_size = os.path.getsize(file)
@@ -17,6 +30,13 @@ print(f'File size is: 0x{f_in_size:06x} bytes')
 
 opk_pack = True
 #opk_pack = False
+
+# read_fixed_size = False
+read_fixed_size = True
+read_pack_size = 0x7e9b
+
+check_blank = True # checks for a blank datapak
+# check_blank = False
 
 header = []
 
@@ -40,75 +60,122 @@ data=[]
 addr = 0
 while eof != True:
     dat = fid.read(1)
-    n = ord(dat)
+    if dat > bytes(0):
+        n = ord(dat)
+    else:
+        n = 0
     if 31 < n < 127:
         n2 = n
     else:
         n2 = 46
 #    print(f'{addr:03x}: {n:02x} {chr(n2):s}')
     data.append(n)
-    if n == 0xFF: 
-        end_chk += 1
-    else: end_chk = 0
-    if end_chk == numFFchk: 
-        eof = True
-        break
+    if read_fixed_size == True:
+        if addr >= read_pack_size:
+            break
+    else:
+        if n == 0xFF: 
+            end_chk += 1
+        else: end_chk = 0
+        if end_chk == numFFchk: 
+            eof = True
+            break
     addr += 1
 fid.close()
 file_len = addr
-#file_len = 256
+# file_len = 256
+# file_len = 512
+# file_len = 1024*8
 
 c = data[0]
 ID = c
 print(f"\nByte #0: Hex: {c:02x}  Bin: {c:08b}")
 print("ID Byte")
-print(f'{"Bit 0: Valid MK II Organiser pack?":40}', end='')
-if (c & 0x01) == 0:
-    print("0 - yes - Valid MK II pack")
-else:
-    print("1 - no - Not a valid MK II pack")
-    
-print(f'{"Bit 1: EPROM pack?":40}', end='')
-if (c & 0x02) == 0:
-    print("0 - no - Ram pack")
-else:
-    print("1 - yes - EPROM")
-    
-print(f'{"Bit 2: Paged?":40}', end='')
-if (c & 0x04) == 0:
-    print("0 - no - Linear")
-else:
-    print("1 - yes - Paged")
-    
-print("{:40}".format("Bit 3: Write protected?"), end='')
-if (c & 0x08) == 0:
-    print("0 - yes - (If a Flashpak, these are write protected)")
-else:
-    print("1 - no")
-    
-print("{:40}".format("Bit 4: Bootable?"), end='')
-if (c & 0x10) == 0:
-    print("0 - yes")
-else:
-    print("1 - no")
 
-print("{:40}".format("Bit 5: Copyable?"), end='')
-if (c & 0x20) == 0:
-    print("0 - no")
-else:
-    print("1 - yes")
 
-print("{:40}".format("Bit 6: Normally set"), end='')
-if (c & 0x40) == 0:
-    print("0 - Flashpak or Trap Rampack")
-else:
-    print("1 - Set")
+ID_dict = {0x01:{-1: 'Mk II pack?',
+                 0: 'yes - Valid Mk II pack',
+                 1: 'no - Not a valid Mk II pack'},
+           0x02:{-1: 'Type?',
+                 0: 'Ram pack',
+                 1: 'EPROM'},
+           0x04:{-1: 'Addressing?',
+                 0: 'linear',
+                 1: 'paged'},
+           0x08:{-1: 'Write protcted?',
+                 0: 'yes (flashpaks are write protected',
+                 1: 'no'},
+           0x10:{-1: 'Bootable?',
+                 0: 'yes',
+                 1: 'no'},
+           0x20:{-1: 'Copyable?',
+                 0: 'no',
+                 1: 'yes'},
+           0x40:{-1: 'Normally set',
+                 0: 'Flashpak or Trap Rampak',
+                 1: 'Set'},
+           0x80:{-1:'Mk1 Pack?',
+                 0: 'no',
+                 1: 'yes'}}
 
-print("{:40}".format("Bit 7: MK1 Pack?"), end='')
-if (c & 0x80) == 0:
-    print("0 - Not a MK1")
-else:
-    print("1 - It's a MK1")
+bit = 1
+bit_val = 1
+while bit <= 8:
+    if (c & bit_val) == 0:
+        val = 0
+    else:
+        val = 1
+    print(f'Bit: {bit}, 0x{bit_val:02x} {ID_dict[bit_val][-1]:<20} {val:<4} {ID_dict[bit_val][val]:<20}\n')
+    bit += 1
+    bit_val = bit_val << 1 # rotate left 1 bit
+
+# print(f'{"Bit 0: Valid MK II Organiser pack?":40}', end='')
+# if (c & 0x01) == 0:
+#     print("0 - yes - Valid MK II pack")
+# else:
+#     print("1 - no - Not a valid MK II pack")
+    
+# print(f'{"Bit 1: EPROM pack?":40}', end='')
+# if (c & 0x02) == 0:
+#     print("0 - no - Ram pack")
+# else:
+#     print("1 - yes - EPROM")
+    
+# print(f'{"Bit 2: Paged?":40}', end='')
+# if (c & 0x04) == 0:
+#     print("0 - no - Linear")
+# else:
+#     print("1 - yes - Paged")
+    
+# print("{:40}".format("Bit 3: Write protected?"), end='')
+# if (c & 0x08) == 0:
+#     print("0 - yes - (If a Flashpak, these are write protected)")
+# else:
+#     print("1 - no")
+    
+# print("{:40}".format("Bit 4: Bootable?"), end='')
+# if (c & 0x10) == 0:
+#     print("0 - yes")
+# else:
+#     print("1 - no")
+
+# print("{:40}".format("Bit 5: Copyable?"), end='')
+# if (c & 0x20) == 0:
+#     print("0 - no")
+# else:
+#     print("1 - yes")
+
+# print("{:40}".format("Bit 6: Normally set"), end='')
+# if (c & 0x40) == 0:
+#     print("0 - Flashpak or Trap Rampack")
+# else:
+#     print("1 - Set")
+
+# print("{:40}".format("Bit 7: MK1 Pack?"), end='')
+# if (c & 0x80) == 0:
+#     print("0 - Not a MK1")
+# else:
+#     print("1 - It's a MK1")
 
 # byte 1 SZ
 c = data[1]
@@ -215,11 +282,15 @@ n = 15 - (file_len % 16) # fill in rest of 16 with zero's - just for printing
 for i in range(n):
     data.append(0)
 addr = 0
+ext = False
 for j in range(l+1): # no. of sets 16 bytes
     out = ""
     dat2 = []
     for k in range(16):
         c = data[addr]
+        if check_blank == True and c != 0xFF:
+            print(f'Non 0xFF byte: {c:02x} found at {addr:04x}')
+            ext = True
         dat2.append(c)
         addr += 1
         if 127 < c or c < 0x20:
@@ -229,3 +300,5 @@ for j in range(l+1): # no. of sets 16 bytes
             out = out +"  "
     base = j*16
     print(f"{base:04x}   {dat2[0]:02x} {dat2[1]:02x} {dat2[2]:02x} {dat2[3]:02x} {dat2[4]:02x} {dat2[5]:02x} {dat2[6]:02x} {dat2[7]:02x}   {dat2[8]:02x} {dat2[9]:02x} {dat2[10]:02x} {dat2[11]:02x} {dat2[12]:02x} {dat2[13]:02x} {dat2[14]:02x} {dat2[15]:02x}   {out:s}")
+    if ext == True:
+        break

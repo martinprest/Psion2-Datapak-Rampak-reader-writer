@@ -20,6 +20,9 @@ works with: PC_Psion2_datapak_read-write_v1_0.py on PC
 v1.1 - June 2021 - added option for datapak write mode
 works with: PC_Psion2_datapak_read-write_v1_1.py on PC
 
+v1.2 - Feb 2022 - fixed bug when reading pages with linear addressing
+added read_fixed_size
+
 */
 
 // datapak pin connections on Arduino
@@ -31,7 +34,7 @@ const byte PGM_N = 18;
 const byte VPP = 19; // transistor switch for VPP supply
 const byte data_pin[] = {2, 3, 4, 5, 6, 7, 8, 9}; // pins D0 to D7 on Datapak
 
-const boolean paged_addr = false; // true for paged addressing, false for linear addressing
+const boolean paged_addr = true; // true for paged addressing, false for linear addressing - note linear addressing is untested!!
 
 // DATAPAK PARAMETERS
 // Datapaks contain an EPROM, so all bits start high, a write sets a bit low.
@@ -62,6 +65,10 @@ const byte datapak_write_pulse = 100; // datapak write pulse in us, 1000 us = 1 
 const long BaudRate = 115200; // faster
 
 const byte numFFchk = 3; // number of consecutive 0xFF bytes to signify the end of the pack, I tried 2 but then found a pack with 2x 0xFF bytes in it.
+
+boolean read_fixed_size = true; // true for fixed size
+word read_pack_size = 0x7e9b; // set a fixed pack size for read
+//word read_pack_size = 0x0100; 
 
 byte CLK_val = 0; // flag to indicate CLK state
 
@@ -217,7 +224,7 @@ void printPageContents(byte page) { // set address to start of page and print co
       nextPage(); // call nextPage(), until page reached      
     }
     else { // linear addressing
-      for (byte a = 0; p <= 0xFF; p++) {
+      for (word a = 0; a <= 0xFF; a++) {
         nextAddress(); // call nextAddress() for every address in page, including 0xFF - so will advance to 0x100
       }
     }
@@ -286,7 +293,6 @@ word readAll(byte output) { // read all pack data, output if selected and return
 
   bool quit = false;
   byte end_chk = 0;
-  //byte numFFchk = 3; // now set globally at start of program
   byte addr_low = 0; // only goes to 255, then wraps around to zero
   word addr_tot = 0; // total
   while  (quit == false) {
@@ -321,7 +327,8 @@ word readAll(byte output) { // read all pack data, output if selected and return
       end_chk++; // increase consecutive 0xFF count
     }
     else end_chk = 0; // reset 0xFF count if non 0xFF byte found
-    if (end_chk == numFFchk) quit = true; // quit if numFFchk 0xFF bytes found, i.e. end of pack reached
+    if ((read_fixed_size == true) && (addr_tot >= read_pack_size)) quit = true; // quit if reach packSize and readFixedsize is true
+    if ((read_fixed_size == false) && (end_chk == numFFchk)) quit = true; // quit if numFFchk 0xFF bytes found, i.e. end of pack reached
     if ((paged_addr == true) && (addr_low == 0xFF)) { // if using paged addressing and end of page reached, go to next page, addr_low will wrap around to zero
       nextPage();
     }
@@ -334,8 +341,8 @@ word readAll(byte output) { // read all pack data, output if selected and return
   }
 
   packDeselectAndInput(); // deselect pack, then set pack data bus to input
-
-  return addr_tot - (numFFchk - 1); // returns address of first 0xFF byte at end of pack
+  if (read_fixed_size == true) return addr_tot;
+  else return addr_tot - (numFFchk - 1); // returns address of first 0xFF byte at end of pack
 }
 
 //------------------------------------------------------------------------------------------------------
@@ -523,13 +530,13 @@ void eraseBytes(word addr, word numBytes) { // erase numBytes, starting at addr
 //------------------------------------------------------------------------------------------------------
 
 void WriteMainRec(bool output) { // write record to main
-  word endAddr = readAll(false); // false (0) - don't print output, just find 1st empty address
+  word endAddr = readAll(false); // false (0) - don't print output, just find 1st empty address - if read_fixed_size==True, will add recod there!!
   if (datapak_mode) {
     digitalWrite(PGM_N, LOW); // take PGM_N low - select & program - need PGM_N low for CE_N low if OE_N high
     program_low = true;
   }
   if (readAddr(endAddr, /* output */ true) == 0xFF) { // move to start address & read it, if value is 0xFF write record
-    char main[] = "--TEST"; // Main record text with leading "--" for length & identifier bytes
+    char main[] = "--The quick brown fox jumps over the lazy dog."; // Main record text with leading "--" for length & identifier bytes
     byte len_main = sizeof(main)-1;// not including 0 at end
     main[0] = len_main-2; // record text length identifier byte
     main[1] = 0x90; // MAIN file identifier byte

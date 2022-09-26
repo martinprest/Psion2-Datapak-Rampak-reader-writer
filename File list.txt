@@ -17,3 +17,7 @@ gen_bldpack.py										Python code to generate an input file for the Developer 
 gen_opltran.py										Python code to generate an input file for the Developer OPLTRAN command
 opkedit.zip										Jaap's OPK editor
 rampak_colours.opk									Example OPK file for a rampak with main record entries of different colours
+Compare_OPK_v1.py									Python code to compare OPK files
+ls_OPK.py										Python code to size & list an OPK file
+comms42.opk										OPK file for the Comms link
+comms42_test_7e9b.opk									OPK file read back from datapak for checking
