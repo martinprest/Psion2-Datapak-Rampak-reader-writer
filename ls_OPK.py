@@ -127,7 +127,7 @@ while not end_of_pack:
 print(f'bad short records: {bsr:d}')
 print(f'short records: {sr:d}')
 print(f'long records: {lr:d}')
-print(f'pack size: {i:06x} {i:d}')
+print(f'pack size: 0x{i:04x} {i:d}')
     
 # display pack data
     
