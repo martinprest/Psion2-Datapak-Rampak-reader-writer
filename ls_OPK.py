@@ -146,9 +146,9 @@ for i in range(n):
     data.append(0)
     
 start = 0x00
+addr = start
 length = size
 end_addr = addr + length
-addr = start
 ext = False
 for j in range(l+1): # no. of sets 16 bytes
     out = ""
