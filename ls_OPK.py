@@ -11,7 +11,8 @@ import os
 
 
 # file1 = "comms42.opk"
-file1 = "rampak_colours.opk"
+# file1 = "rampak_colours.opk"
+file1 = "testpak.opk"
 
 dat = [] #  file data 
 dat_size = []
@@ -38,7 +39,7 @@ with open(file1,'rb') as fid:
         if addr == fs:
             eof = True
 ds = len(dat)
-print(f'bytes read: {ds:d} 0x{ds:06X}')
+print(f'bytes read: {ds:d} 0x{ds:06x}')
 dat_size.append(ds)
     
             
@@ -70,14 +71,17 @@ start = 0x0A # records start after ID bytes at address 10
 # i = np.uint32(start) # address i is 32 bit integer
 i = start
 
-print(dat[i:i+2])
+# print(dat[i:i+2])
+
+print('Record list:')
 
 bsr = 0
 sr = 0
 lr = 0
 end_of_pack = False
-r_types = {0x80:'long',0x81:'data',0x82:'diary',0x83:'OPL',0x84:'comms',0x85:'sheet',0x86:'pager',0x87:'notepad'}
+r_types = {0x80:'long',0x81:'data',0x82:'diary',0x83:'OPL',0x84:'comms',0x85:'sheet',0x86:'pager',0x87:'notes'}
 df_id = [] # list to store data file IDs
+df_name = [] # list to store data file names
 
 while not end_of_pack:
     if i >= 0x10000: # limit read size here, if needed
@@ -85,17 +89,23 @@ while not end_of_pack:
     if dat[i] == 0xFF: # end of pack
         skp = 0
         end_of_pack = True
+        print(f'0x{i:04x} end of pack')
     elif dat[i+1] == 0xFF: # bad short record
         skp=1
         bsr += 1
+        print(f'0x{i:04x} bad short record')
     elif dat[i] == 2 and dat[i+1] == 0x80: # long record
-        skp = dat[i+2]*256 + dat[i+3] # low byte, high byte of length
+        skp = dat[i+2]*256 + dat[i+3] + 4 # low byte, high byte of length
         lr += 1
-        print(f'long record at 0x{i:06x} length: 0x{skp-4:06x} {skp:6d} ')
+        print(f'0x{i:04x} Long  Length: 0x{skp-4:04x} skip :0x{skp:04x}')
     else: # short record
         skp = dat[i] + 2
         sr += 1
-        r_type = dat[i+1]
+        r_type = dat[i+1] | 0x80 # OR with 0x80 as already know it is a short record, and could be deleted
+        if  dat[i+1] >> 7: # shift right 7 bits to see if MSB is high - not deleted
+            r_del = 'n' # deleted?
+        else:
+            r_del = 'y' # deleted?
         r_string = ''
         l_str = dat[i]
         if r_type == 0x81: # data file so remove 1 byte from string length for file ID (0x90 for main)
@@ -108,12 +118,19 @@ while not end_of_pack:
             except:
                 r_type_s = 'unknown' # if not in dictionary - unknown
         elif r_type >= 0x90 and r_type <= 0xFE: # record from datafile with ID
-            r_type_s = f'record from datafile ID: {r_type:02x}'
+            try:
+                p = df_id.index(r_type) # look for datafile ID in list
+                dfn = df_name[p] # get name from list
+            except:
+                dfn = 'ID not found'
+            r_type_s = f'record from datafile ID: {r_type:02x} {dfn:s}'
         else:
             r_type_s = 'unknown' # not any of the above
         for sl in range(l_str): # build record string
             r_string = r_string + chr(dat[i+2+sl])
-        print(f'short record Type: 0x{r_type:02x} {r_type_s:s} at 0x{i:06x} length: 0x{skp-2:06x} : {r_string:s}  skip:{skp:4d}')
+        if r_type == 0x81:
+            df_name.append(r_string)
+        print(f'0x{i:04x} Short Length: 0x{skp-2:04x} skip: 0x{skp:04x} deleted?: {r_del:s} Type: 0x{dat[i+1]:02x} {r_type_s:s} : {r_string:s}')
     i = i + skp
 
 print(f'bad short records: {bsr:d}')
@@ -129,10 +146,8 @@ check_blank = False
 print("\naddr   00 01 02 03 04 05 06 07   08 09 0A 0B 0C 0D 0E 0F   TEXT")
 print("---------------------------------------------------------------")
 
+# size = 0x200
 file_len = size
-# file_len = 256
-# file_len = 512
-# file_len = 1024*8
 
 l = (file_len-1) // 16 # div (no. of complete 16's in file_len)
 n = 15 - (file_len % 16) # fill in rest of 16 with zero's - just for printing
@@ -140,7 +155,7 @@ for i in range(n):
     data.append(0)
     
 start = 0x00
-length = 0x100
+length = size
 end_addr = addr + length
 addr = start
 ext = False
