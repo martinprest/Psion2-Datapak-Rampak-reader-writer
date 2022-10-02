@@ -7,7 +7,7 @@ Created: Sept 2022
 @author: martin
 """
 
-import os
+# import os
 
 
 # file1 = "comms42.opk"
@@ -15,7 +15,7 @@ import os
 file1 = "testpak.opk"
 
 dat = [] #  file data 
-dat_size = []
+
 
 # read file data
 
@@ -40,13 +40,6 @@ with open(file1,'rb') as fid:
             eof = True
 ds = len(dat)
 print(f'bytes read: {ds:d} 0x{ds:06x}')
-dat_size.append(ds)
-    
-            
-dat_sz_min = min(dat_size)
-# dat_sz_min = 80
-
-
 
 # print OPK header and remove it
 
@@ -65,13 +58,11 @@ print(f'size_hh: 0x{size_hh:02x} size_h: 0x{size_h:02x}, size_l: 0x{size_l:02x},
 
 dat = dat[6::] # cut out OPK header bytes
 
-# size pack
+# size & list pack
 
 start = 0x0A # records start after ID bytes at address 10
 # i = np.uint32(start) # address i is 32 bit integer
 i = start
-
-# print(dat[i:i+2])
 
 print('Record list:')
 
