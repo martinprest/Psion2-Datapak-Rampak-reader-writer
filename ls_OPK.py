@@ -22,7 +22,6 @@ dat = [] #  file data
 print(f'File {file1:s}:')
 # fs = os.path.getsize(f)
 # print(f'File size is: {fs:d} bytes')
-# fid = open(f,'rb')
 with open(file1,'rb') as fid:
     fid.seek(0,2)      # go to the file end, 2-rel. to end
     fs = fid.tell()   # get the end of file location
@@ -66,9 +65,9 @@ i = start
 
 print('Record list:')
 
-bsr = 0
-sr = 0
-lr = 0
+bsr = 0 # bad short record count
+sr = 0 # short record count
+lr = 0 # long record count
 end_of_pack = False
 r_types = {0x80:'long',0x81:'data',0x82:'diary',0x83:'OPL',0x84:'comms',0x85:'sheet',0x86:'pager',0x87:'notes'}
 df_id = [] # list to store data file IDs
@@ -77,33 +76,38 @@ df_name = [] # list to store data file names
 while not end_of_pack:
     if i >= 0x10000: # limit read size here, if needed
         end_of_pack = True
-    if dat[i] == 0xFF: # end of pack
+    rec_len = dat[i] # record length
+    rec_type = dat[i+1] # record type (only 2 main types: short or long)
+    r_type = rec_type | 0x80 # OR with 0x80, as could be deleted
+    if  rec_len == 0xFF: # end of pack
         skp = 0
         end_of_pack = True
         print(f'0x{i:04x} end of pack')
-    elif dat[i+1] == 0xFF: # bad short record
-        skp=1
+    elif rec_type == 0xFF: # bad short record
+        skp = 2 # ignore length if bad
         bsr += 1
         print(f'0x{i:04x} bad short record')
-    elif dat[i] == 2 and dat[i+1] == 0x80: # long record
-        skp = dat[i+2]*256 + dat[i+3] + 4 # low byte, high byte of length
+    elif rec_type == 0x80: # long record - preceding short record has: deleted?, type, filename
+        skp = (dat[i+2] << 8) + dat[i+3] + 4 # high byte, low byte of long rec length
         lr += 1
         print(f'0x{i:04x} Long  Length: 0x{skp-4:04x} skip :0x{skp:04x}')
     else: # short record
-        skp = dat[i] + 2
+        skp = rec_len + 2
         sr += 1
-        r_type = dat[i+1] | 0x80 # OR with 0x80 as already know it is a short record, and could be deleted
-        if  dat[i+1] >> 7: # shift right 7 bits to see if MSB is high - not deleted
+        r_string = ''
+        for sl in range(rec_len): # build record string
+            c = dat[i+2+sl]
+            r_string += chr(c)
+        if  rec_type >> 7: # shift right 7 bits to see if MSB is high - not deleted
             r_del = 'n' # deleted?
         else:
             r_del = 'y' # deleted?
-        r_string = ''
-        l_str = dat[i]
-        if r_type == 0x81: # data file so remove 1 byte from string length for file ID (0x90 for main)
-            l_str -= 1
+        if r_type == 0x81: # datafile so read name and file ID (0x90 for main)
+            r_string = r_string[0:8] # file names are always 9 chars
             df_id.append(dat[i+10]) # store datafile ID
+            df_name.append(r_string.strip()) # store datafile name & strip spaces
             r_type_s = f'datafile ID: {dat[i+10]:02x}'
-        elif r_type >= 0x82 and r_type <= 0x87:
+        elif r_type >= 0x82 and r_type <= 0x8F:
             try:
                 r_type_s = r_types[r_type] # try looking up record type in dictionary
             except:
@@ -117,10 +121,6 @@ while not end_of_pack:
             r_type_s = f'record from datafile ID: {r_type:02x} {dfn:s}'
         else:
             r_type_s = 'unknown' # not any of the above
-        for sl in range(l_str): # build record string
-            r_string = r_string + chr(dat[i+2+sl])
-        if r_type == 0x81:
-            df_name.append(r_string)
         print(f'0x{i:04x} Short Length: 0x{skp-2:04x} skip: 0x{skp:04x} deleted?: {r_del:s} Type: 0x{dat[i+1]:02x} {r_type_s:s} : {r_string:s}')
     i = i + skp
 
@@ -128,6 +128,11 @@ print(f'bad short records: {bsr:d}')
 print(f'short records: {sr:d}')
 print(f'long records: {lr:d}')
 print(f'pack size: 0x{i:04x} {i:d}')
+
+if i == size:
+    print('- Sizing matches OPK size!')
+else:
+    print('- Sizing does not match OPK size!!')
     
 # display pack data
     
@@ -138,17 +143,15 @@ print("\naddr   00 01 02 03 04 05 06 07   08 09 0A 0B 0C 0D 0E 0F   TEXT")
 print("---------------------------------------------------------------")
 
 # size = 0x200
-file_len = size
 
-l = (file_len-1) // 16 # div (no. of complete 16's in file_len)
-n = 15 - (file_len % 16) # fill in rest of 16 with zero's - just for printing
+l = (size-1) // 16 # div (no. of complete 16's in size)
+n = 15 - (size % 16) # fill in rest of 16 with zero's - just for printing
 for i in range(n):
     data.append(0)
     
 start = 0x00
+end_addr = start + size
 addr = start
-length = size
-end_addr = addr + length
 ext = False
 for j in range(l+1): # no. of sets 16 bytes
     out = ""
