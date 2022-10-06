@@ -79,7 +79,7 @@ while not end_of_pack:
     rec_len = dat[i] # record length
     rec_type = dat[i+1] # record type (only 2 main types: short or long)
     r_type = rec_type | 0x80 # OR with 0x80, as could be deleted
-    if  rec_len == 0xFF: # end of pack
+    if rec_len == 0xFF: # end of pack
         skp = 0
         end_of_pack = True
         print(f'0x{i:04x} end of pack')
@@ -103,7 +103,7 @@ while not end_of_pack:
         else:
             r_del = 'y' # deleted?
         if r_type == 0x81: # datafile so read name and file ID (0x90 for main)
-            r_string = r_string[0:8] # file names are always 9 chars
+            r_string = r_string[0:8] # file names are always 8 chars (range end value is exclusive)
             df_id.append(dat[i+10]) # store datafile ID
             df_name.append(r_string.strip()) # store datafile name & strip spaces
             r_type_s = f'datafile ID: {dat[i+10]:02x}'
