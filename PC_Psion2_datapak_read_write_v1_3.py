@@ -22,7 +22,9 @@ works with: Arduino_Psion2_datapak_read-write_v1_0.ino on Arduino
 v1.1 - added option for datapak write mode
 works with: Arduino_Psion2_datapak_read-write_v1_1.ino on Arduino
 
-v1.2 - Feb 2022, added set_write_protect, update_checksum and fixedReadSize
+v1.2 - Feb 2022 - added set_write_protect, update_checksum and fixedReadSize
+
+v1.3 - Oct 2022 - added sizing and blank check using code from Matt Callow https://github.com/mattcallow/psion_pak_reader
 
 """
 
