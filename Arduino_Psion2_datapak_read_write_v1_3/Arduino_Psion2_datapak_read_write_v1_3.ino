@@ -570,7 +570,7 @@ void printCommands() {
   printAddrMode();
   Serial.println(F("(Ard) Select a command:\ne - erase\nr - read pack\nw - write pack"));
   Serial.println(F("0 - print page 0\n1 - print page 1\n2 - print page 2\n3 - print page 3"));
-  Serial.println(F("t - write TEST record to main\nr - rampak (or datapak) mode\nl - linear (or paged) addressing"));
+  Serial.println(F("t - write TEST record to main\nm - rampak (or datapak) mode\nl - linear (or paged) addressing"));
   Serial.println(F("i - print pack id byte flags\nd - directory and size pack\nb - check if pack is blank"));
   Serial.println(F("? - list commands\nx - exit"));
 }
