@@ -1,6 +1,5 @@
-Arduino_Psion2_datapak_read_write_v1_2/Arduino_Psion2_datapak_read_write_v1_2.ino	Arduino code for the reader-writer v1_2 includes datapak write
-LICENSE	GPL-3.0 									License
-PC_Psion2_datapak_read_write_v1_2.py							Python code for the reader-writer V1_2 includes datapak write
+Arduino_Psion2_datapak_read_write_v1_3/Arduino_Psion2_datapak_read_write_v1_3.ino	Arduino code for the reader-writer v1_3
+PC_Psion2_datapak_read_write_v1_3.py							Python code for the reader-writer v1_3
 Psion2_Rampak_read_write_1.jpg								Photo of the breadboard with Arduino and Rampak
 Psion2_closed_thumb.jpg									Photo of Psion Organiser II LZ64 closed
 Psion2_datapak_read_write_schematic.PNG							Schematic v1 without datapak write circuit
@@ -18,4 +17,4 @@ rampak_colours.opk									Example OPK file for a rampak with main record entrie
 Compare_OPK_v1.py									Python code to compare OPK files
 ls_OPK.py										Python code to size & list an OPK file
 comms42.opk										OPK file for the Comms link
-comms42_test_7e9b.opk									OPK file read back from datapak for checking
+LICENSE	GPL-3.0 									License

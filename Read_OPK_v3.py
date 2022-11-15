@@ -10,9 +10,9 @@ Created: March 2021
 import os
 
 # file = "rampak_colours.opk"
-
-file = "comms42.opk"
-# file = "comms42_test_7e9b.opk"
+# file = "comms42.opk"
+# file = "linear_datapak.opk"
+file = "testpak.opk"
 
 fid = open(file,'rb')
 f_in_size = os.path.getsize(file)
@@ -21,12 +21,12 @@ print(f'File size is: 0x{f_in_size:06x} bytes')
 opk_pack = True
 #opk_pack = False
 
-# read_fixed_size = False
-read_fixed_size = True
+read_fixed_size = False
+# read_fixed_size = True
 read_pack_size = 0x7e9b
 
-check_blank = True # checks for a blank datapak
-# check_blank = False
+# check_blank = True # checks for a blank datapak
+check_blank = False
 
 header = []
 
@@ -63,19 +63,15 @@ while eof != True:
     if read_fixed_size == True:
         if addr >= read_pack_size:
             break
-    else:
-        if n == 0xFF: 
-            end_chk += 1
-        else: end_chk = 0
-        if end_chk == numFFchk: 
-            eof = True
-            break
+    elif addr >= size:
+        break
     addr += 1
 fid.close()
-file_len = addr
+# file_len = addr
 # file_len = 256
 # file_len = 512
 # file_len = 1024*8
+file_len = size
 
 c = data[0]
 ID = c

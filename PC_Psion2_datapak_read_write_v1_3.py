@@ -8,6 +8,8 @@ created by Martin Prest 2021
 
 https://github.com/martinprest/Psion2-Datapak-Rampak-reader-writer
 
+https://hackaday.io/project/176677-psion-ii-datapak-and-rampak-readerwriter
+
 Uses linear or paged addressing, choose with paged_addr boolean variable below
 packs that use segmented addressing are not supported
 segmented addressing requires sending a segment address to the pack first
@@ -35,25 +37,25 @@ SerialPort = 'COM3' # Windows type port name, could be COM4 etc.
 # SerialPort = '/dev/ttyUSB0' # Linux type port name, could be ttyUSB1 etc.
 
 #BaudRate = 9600
-#BaudRate = 19200
+# BaudRate = 19200
 #BaudRate = 57600
 BaudRate = 115200 # must match Arduino value
 
-numFFchk = 3 # must be same as Arduino program, to check for end of pack during read, if set_fixed_size = False
+# numFFchk = 3 # must be same as Arduino program, to check for end of pack during read, if set_fixed_size = False
 
 set_Rampak_ID = False # if false, leaves ID byte as it is in OPK file
 # set_Rampak_ID = True # if true, modifies ID byte to set pack as a rampak
-# set_paged = False # if False, ID byte not modified
-set_paged = True # if True, modifies ID byte to set paged addressing
+set_paged = False # if False, ID byte not modified
+# set_paged = True # if True, modifies ID byte to set paged addressing
 set_write_protect = False # if False, ID byte not modified
 # set_write_protect = True # if True, modifies ID byte to set -write protect
 
 update_checksum = False # if False uses checksum from OPK file
 # update_checksum = True # if True, updates checksum to calculated one
 
-# read_fixed_size = False
-read_fixed_size = True
-read_pack_size = 0x7e9b
+read_fixed_size = False
+# read_fixed_size = True
+# read_pack_size = 0x7e9b
 # read_pack_size = 0x0100
 
 set_pack_size = False # if false, don't change pack size written to pack
@@ -62,14 +64,16 @@ set_pack_size = False # if false, don't change pack size written to pack
 #pack_size_out = 2 # 2*8 = 16 kB
 pack_size_out = 4 # 4*8 = 32 kB
 
-# infile = "rampak_colours.opk"
-infile = "comms42.opk"
+infile = "rampak_colours.opk"
+# infile = "comms42.opk"
 
 print("Input filename:",infile)
 f_size = os.path.getsize(infile)
 print(f'(PC) File size (decimal) is: {f_size} bytes')
 
-outfile = "comms42_test_7e9b.opk"
+# outfile = "linear_datapak_blank_test_7e9b.opk"
+outfile = "test.opk"
+# outfile = "comms_linear_test.opk"
 
 print("Output filename:",outfile)
 f_out_open = False
@@ -202,96 +206,82 @@ def ReadPak():
     with open(outfile,'wb') as f_out: # open file for output
         f_out.write("OPK".encode())
         f_out.write(bytes(3)) # write 3 zero bytes for size, written later
-        write_file = True
-        end_chk = False
+        # write_file = True
         addr = 0
-        while write_file == True:
-            if ser.inWaiting():
-                dat = ser.read(1) # read 1 value
-                ser.write(dat) # echo back to Arduino for verify
-                n = ord(dat) # convert char or b'\xff' hex byte to value
-                if 31 < n < 127:
-                    n2 = n
-                else:
-                    n2 = 46 # character "." for non-printable character
-                print(f'{addr:04x} {n:02x} {chr(n2):s}  ', end='')
-                f_out.write(dat) # write it to file
-                if read_fixed_size == True:
-                    if addr >= read_pack_size:
-                        break
-                else:
-                    if n == 0xFF:                         
-                        end_chk += 1                
-                    else: end_chk = 0
-                    if end_chk >= numFFchk: # must be same as Arduino program
-                        write_file = False
-                        break
-                addr += 1
-                if addr % 0x08 == 0: # if remainder of addr div 8 is zero, newline
-                    print("") # newline
+        read_size = [0,0,0];
+        for i in range(3):
+            n = ser.read(1) # read 3 bytes for pack size
+            read_size[i] = ord(n) 
+            # print(n, read_size)
+        rd_size = (read_size[0]<<16) + (read_size[1]<<8) + (read_size[2])
+        print(f'Read size: {rd_size:06x}')
+        # while write_file == True:
+        while True:
+            # if ser.inWaiting():
+            dat = ser.read(1) # read 1 value
+            if dat == bytes(): # no byte from read!
+                print('\n(PC) Timeout! No byte from Arduino')
+                break
+            ser.write(dat) # echo back to Arduino for verify
+            # ser.write(bytes([0xFF])) // write a single byte of value 0xFF
+            n = ord(dat) # convert char or b'\xff' hex byte to value
+            if 31 < n < 127:
+                n2 = n
+            else:
+                n2 = 46 # character "." for non-printable character
+            print(f'{addr:04x} {n:02x} {chr(n2):s}  ', end='')
+            f_out.write(dat) # write it to file
+            if read_fixed_size == True:
+                if addr >= read_pack_size or addr >= rd_size: # read_pack_size can't be bigger than pack
+                    break
+            elif addr >= rd_size:
+                    break
+            addr += 1
+            if addr % 8 == 0: # if remainder of addr div 8 is zero, newline
+                print("") # newline        
         f_out.seek(3) # move back to size bytes in PC outfile, byte 3: 0, 1, 2, 3
-        addr -= (numFFchk - 1) # decrement addr pointer to final 0xFF byte so addr is number of bytes in pack
         addr_hh = (addr & 0xFF0000) >> 16 # high byte, mask & shift right 16 bits
         addr_h = (addr & 0xFF00) >> 8 # middle byte, mask & shift right 8 bits
         addr_l = addr & 0xFF # low byte
         f_out.write(bytes([addr_hh,addr_h,addr_l])) # write size, includes 0xFF bytes at end
-        print("") # newline  
-        print("(PC) Datapak read to file has ended")
+        print("\n(PC) Datapak read to file has ended")
+        
 
+keys = ['e','r','w','0','1','2','3','t','m','l','i','d','b','?','x'] # allowed key list
 loop = True
 inp = ''
-
-try:
-    with serial.Serial(SerialPort, BaudRate, timeout=2) as ser:
-        print("Reading:",ser.name)
-        while loop:
-            time.sleep(0.001) # 1 ms delay to slow loop down
-                    
-            if ser.inWaiting(): # message from Arduino waiting in serial input buffer
-                msg = ser.readline()
-                msg_d = msg.decode('utf-8','ignore') # decode from utf-8
-        #        if ord(msg_d) == 10: print() # newline
-                msg_s = "".join(i for i in msg_d if 32 <= ord(i) <= 126) # remove unwanted characters
-        #        print(msg_s,end='') # message from Arduino, supress newline
-                print(msg_s) # message from Arduino
-                if msg_s == "XXRead": 
-                    ReadPak()
-                if msg_s == "XXExit": 
-                    loop = False
-                    
-            else: # no message from Arduino, so check for PC key press
-                    if kb.is_pressed('e'):                        
-                        inp='e'
-                    elif kb.is_pressed('r'): 
-                        inp='r'
-                    elif kb.is_pressed('w'): 
-                        inp='w'
-                    elif kb.is_pressed('0'):          
-                        inp='0'
-                    elif kb.is_pressed('1'): 
-                        inp='1'
-                    elif kb.is_pressed('2'): 
-                        inp='2'
-                    elif kb.is_pressed('3'): 
-                        inp='3'
-                    elif kb.is_pressed('t'): 
-                        inp='t'
-                    elif kb.is_pressed('m'): 
-                        inp='m'                        
-                    elif kb.is_pressed('?'): 
-                        inp='?'
-                    elif kb.is_pressed('x'):              
-                        inp='x'                    
-                    elif kb.is_pressed('Enter'):
-                        inp = '\n'
-                    if inp != '':
-                        while kb.is_pressed(inp): # wait until key not pressed any more
-                            pass # do nothing
+# try: # error trapping
+with serial.Serial(SerialPort, BaudRate, timeout=0.5) as ser:
+    print("Reading:",ser.name)
+    while loop:
+        time.sleep(0.001) # 1 ms delay to slow loop down
+    
+        if ser.inWaiting(): # message from Arduino waiting in serial input buffer
+            msg = ser.readline()
+            msg_d = msg.decode('utf-8','ignore') # decode from utf-8
+    #        if ord(msg_d) == 10: print() # newline
+            msg_s = "".join(i for i in msg_d if 32 <= ord(i) <= 126) # remove unwanted characters
+    #        print(msg_s,end='') # message from Arduino, supress newline
+            print(msg_s) # message from Arduino
+            if msg_s == "XXRead": 
+                ReadPak()
+            if msg_s == "XXExit": 
+                loop = False
+                
+        else: # no message from Arduino, so check for PC key press
+                for key in keys:
+                    if kb.is_pressed(key):
+                        inp = key
+                if kb.is_pressed('Enter'):
+                    inp = '\n'
+                if inp != '':
+                    while kb.is_pressed(inp): # wait until key not pressed any more
+                        pass # do nothing
 #                        print(f'(PC) Key pressed: {inp:s} as bytes:',inp.encode()) # print keypress
-                        ser.write(inp.encode()) # write inp key to serial
-                        if inp == 'w':
-                            WritePak()
-                        inp = ''
-except:
-    print("\nError! Most likely a serial Error? Maybe Arduino not connected to serial port?")
+                    ser.write(inp.encode()) # write inp key to serial
+                    if inp == 'w':
+                        WritePak()
+                    inp = ''
+# except:
+    # print("\nError! Most likely a serial Error? Maybe Arduino not connected to serial port?")
         

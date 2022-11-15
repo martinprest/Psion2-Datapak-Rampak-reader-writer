@@ -13,6 +13,7 @@ Created: Sept 2022
 # file1 = "comms42.opk"
 # file1 = "rampak_colours.opk"
 file1 = "testpak.opk"
+# file1 = "test.opk"
 
 dat = [] #  file data 
 
@@ -77,13 +78,14 @@ while not end_of_pack:
     if i >= 0x10000: # limit read size here, if needed
         end_of_pack = True
     rec_len = dat[i] # record length
-    rec_type = dat[i+1] # record type (only 2 main types: short or long)
-    r_type = rec_type | 0x80 # OR with 0x80, as could be deleted
     if rec_len == 0xFF: # end of pack
         skp = 0
         end_of_pack = True
         print(f'0x{i:04x} end of pack')
-    elif rec_type == 0xFF: # bad short record
+        break
+    rec_type = dat[i+1] # record type (only 2 main types: short or long)
+    r_type = rec_type | 0x80 # OR with 0x80, as could be deleted
+    if rec_type == 0xFF: # bad short record
         skp = 2 # ignore length if bad
         bsr += 1
         print(f'0x{i:04x} bad short record')
@@ -130,9 +132,9 @@ print(f'long records: {lr:d}')
 print(f'pack size: 0x{i:04x} {i:d}')
 
 if i == size:
-    print('- Sizing matches OPK size!')
+    print('Sizing matches OPK size!')
 else:
-    print('- Sizing does not match OPK size!!')
+    print('Sizing does not match OPK size!!')
     
 # display pack data
     

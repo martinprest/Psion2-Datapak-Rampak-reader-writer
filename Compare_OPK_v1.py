@@ -11,7 +11,8 @@ import os
 import sys
 
 file1 = "comms42.opk"
-file2 = "comms42_test_7e9b.opk"
+# file2 = "comms42_test_7e9b.opk"
+file2 = "comms_linear_test.opk"
 
 files = [file1,file2]
 
@@ -86,7 +87,7 @@ size = (size_hh << 16) + (size_h << 8) + size_l # shift size_hh left 16 bits, si
 print(f'size_hh: 0x{size_hh:02x} size_h: 0x{size_h:02x}, size_l: 0x{size_l:02x}, size: 0x{size:06x}')
 
 
-data = dat[0]
+data = dat[1]
 check_blank = False
 
       

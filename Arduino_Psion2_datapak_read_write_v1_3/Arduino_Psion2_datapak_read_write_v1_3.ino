@@ -23,18 +23,20 @@ works with: PC_Psion2_datapak_read-write_v1_1.py on PC
 v1.2 - Feb 2022 - fixed bug when reading pages with linear addressing
 added read_fixed_size
 
+v1.3 - Oct 2022 - added sizing and blank check using code from Matt Callow https://github.com/mattcallow/psion_pak_reader
+
 */
 
 // datapak pin connections on Arduino
-const byte MR = 14;
-const byte OE_N = 15;
-const byte CLK = 16;
-const byte SS_N = 17;
-const byte PGM_N = 18;
-const byte VPP = 19; // transistor switch for VPP supply
+#define MR 14
+#define OE_N 15
+#define CLK 16
+#define SS_N 17
+#define PGM_N 18
+#define VPP 19 // transistor switch for VPP supply
 const byte data_pin[] = {2, 3, 4, 5, 6, 7, 8, 9}; // pins D0 to D7 on Datapak
 
-const boolean paged_addr = true; // true for paged addressing, false for linear addressing - note linear addressing is untested!!
+boolean paged_addr = true; // true for paged addressing, false for linear addressing - note linear addressing is untested!! - paged is default
 
 // DATAPAK PARAMETERS
 // Datapaks contain an EPROM, so all bits start high, a write sets a bit low.
@@ -52,21 +54,23 @@ const boolean paged_addr = true; // true for paged addressing, false for linear 
 // So verification is done with VPP low and is the same as a standard read.
 
 boolean datapak_mode = true; // true for datapaks, false for rampaks, mode can be changed by command option
-boolean program_low = false; // indicates if PGM_N is low, during datapak write, so page counter can be pulsed accordingly
+boolean program_low = false; // will be set true when PGM_N is low during datapak write, so page counter can be pulsed accordingly
 const boolean force_write_cycles = false; // set true to perform max write cycles, without break for confirmed write
 const boolean overwrite = false; // set true to add a longer overwite after confirmed write
 const byte max_datapak_write_cycles = 5; // max. no. of write cycle attempts before failure
 const byte datapak_write_pulse = 100; // datapak write pulse in us, 1000 us = 1 ms, 10us write can be read by Arduino, but not Psion!
 
 // ensure Baud rate matches the python PC software
-//const long BaudRate = 9600; // default
-//const long BaudRate = 19200; // faster
-//const long BaudRate = 57600; // faster
-const long BaudRate = 115200; // faster
+//#define BaudRate 9600 // default
+//#define BaudRate 19200 // faster
+//#define BaudRate 57600 // faster
+#define BaudRate 115200 // faster
 
-const byte numFFchk = 3; // number of consecutive 0xFF bytes to signify the end of the pack, I tried 2 but then found a pack with 2x 0xFF bytes in it.
+word current_address = 0;
+#define max_eprom_size 0x8000 // max eprom size - 32k - only used by Matt's code
 
-boolean read_fixed_size = true; // true for fixed size
+boolean read_fixed_size = false; // true for fixed size
+//boolean read_fixed_size = true; // true for fixed size
 word read_pack_size = 0x7e9b; // set a fixed pack size for read
 //word read_pack_size = 0x0100; 
 
@@ -93,7 +97,7 @@ void ArdDataPinsToInput() { // set Arduino data pins to input
   // datapaks seem to read without the PULLUPs, PULLUPs prevent garbage being read when there is no datapak connected
   // rampaks seem to read ok with PULLUPs enabled, but pullups & pulldowns will draw unnecessary current
   for (byte i = 0; i <= 7; i += 1) {
-    if (datapak_mode) pinMode(data_pin[i], INPUT_PULLUP); // enable pullups if datapak
+    if (datapak_mode) pinMode(data_pin[i], INPUT_PULLUP); // enable pullups if datapak mode
     else pinMode(data_pin[i], INPUT); // rampak has built in pull downs!!
   }
   delayShort();
@@ -105,6 +109,26 @@ void ArdDataPinsToOutput() { // set Arduino data pins to output
   for (byte i = 0; i <= 7; i += 1) {
     pinMode(data_pin[i], OUTPUT);
   }
+  delayShort();
+}
+
+//------------------------------------------------------------------------------------------------------
+
+void packOutputAndSelect() { // sets pack data pins to output and selects pack memory chip (EPROM or RAM)
+  digitalWrite(OE_N, LOW); // enable output - pack ready for read
+  delayShort(); // delay whilst pack data pins go to output
+  digitalWrite(SS_N, LOW); // take memory chip CE_N low - select pack
+  delayShort();
+  delayShort();
+}
+
+//------------------------------------------------------------------------------------------------------
+
+void packDeselectAndInput() { // deselects pack memory chip and sets pack pins to input
+  digitalWrite(SS_N, HIGH); // take memory chip select high - deselect pack
+  delayShort();
+  digitalWrite(OE_N, HIGH); // disable output - pack ready for write
+  delayShort(); // don't do anything until output disabled & pack data pins become input
   delayShort();
 }
 
@@ -137,6 +161,8 @@ void resetAddrCounter() { // Resets pack counters
   delayShort();
   digitalWrite(MR, LOW);
   delayShort();
+  //delayLong();
+  current_address = 0;
 }
 
 //------------------------------------------------------------------------------------------------------
@@ -151,6 +177,8 @@ void nextAddress() { // toggles CLK to advance the address, CLK is LSB of addres
     CLK_val = 0;
   }
   delayShort(); // settling time, let datapak catch up with address
+  current_address++;
+  if (paged_addr && ((current_address & 0xFF) == 0)) nextPage(); // if paged mode and low byte of addr is zero (end of page) - advance page counter
 }
 
 //------------------------------------------------------------------------------------------------------
@@ -184,26 +212,7 @@ void setAddress(word addr) { // resets counter then toggles counters to reach ad
     for (word a = 0; a < addr; a++) {nextAddress();} // call nextAddress, until addr reached 
   }
   delayShort(); // extra delay, not needed?
-}
-
-//------------------------------------------------------------------------------------------------------
-
-void packOutputAndSelect() { // sets pack data pins to output and selects pack memory chip (EPROM or RAM)
-  digitalWrite(OE_N, LOW); // enable output - pack ready for read
-  delayShort(); // delay whilst pack data pins go to output
-  digitalWrite(SS_N, LOW); // take memory chip CE_N low - select pack
-  delayShort();
-  delayShort();
-}
-
-//------------------------------------------------------------------------------------------------------
-
-void packDeselectAndInput() { // deselects pack memory chip and sets pack pins to input
-  digitalWrite(SS_N, HIGH); // take memory chip select high - deselect pack
-  delayShort();
-  digitalWrite(OE_N, HIGH); // disable output - pack ready for write
-  delayShort(); // don't do anything until output disabled & pack data pins become input
-  delayShort();
+  current_address = addr;
 }
 
 //------------------------------------------------------------------------------------------------------
@@ -211,13 +220,11 @@ void packDeselectAndInput() { // deselects pack memory chip and sets pack pins t
 void printPageContents(byte page) { // set address to start of page and print contents of page (256 bytes) to serial (formatted with addresses)
 
   ArdDataPinsToInput(); // ensure Arduino data pins are set to input
-  
-  resetAddrCounter(); // reset address counters
-
   packOutputAndSelect(); // Enable pack data bus output, then select it
-
-  Serial.println("addr  00 01 02 03 04 05 06 07  08 09 0A 0B 0C 0D 0E 0F  -------TEXT-------");
-  Serial.println("------------------------------------------------------  01234567  89ABCDEF");
+  resetAddrCounter(); // reset address counter
+  
+  Serial.println(F("addr  00 01 02 03 04 05 06 07  08 09 0A 0B 0C 0D 0E 0F  -------TEXT-------"));
+  Serial.println(F("------------------------------------------------------  01234567  89ABCDEF")); // comment out to save memory
 
   for (byte p = 0; p < page; p++) { // page counter
     if (paged_addr) { // paged addressing
@@ -230,25 +237,34 @@ void printPageContents(byte page) { // set address to start of page and print co
     }
   }
   for (word base = 0; base <= 255; base += 16) { // loop through 0 to 255 in steps of 16, last step to 256
-    byte data[16];
+    byte data;
     char str[19] = ""; // fill with zeros, 16+2+1, +1 for char zero terminator
     str[8] = 32; str[9] = 32; // gap in middle, 2 spaces
-    byte gap = 0;
+    byte pos = 0;
+    char buf[6]; // buffer for sprintf: 5 chars + terminator
+    sprintf(buf, "%04x ", base + page * 0x100); // format page in hex
+    Serial.print(buf);
     for (byte offset = 0; offset <= 15; offset += 1) { // loop through 0 to 15
-      if (offset >= 8) gap = 2; // jump gap for bytes 8 to 15
-      byte pos = offset+gap; // string char position
-      data[offset] = readByte(); // put byte in data array
-      if ((data[offset] > 31) && (data[offset] < 127)) { // if printable char, put in str        
-        str[pos] = data[offset];
+      if ((offset == 0) || (offset == 8)) Serial.print(" "); // at 0 or 7 print an extra spaces
+      data = readByte(); // read byte from pack
+      sprintf(buf, "%02x ", data); // format data byte in hex
+      Serial.print(buf);
+      if ((data > 31) && (data < 127)) { // if printable char, put in str        
+        str[pos] = data;
       }
-      else str[pos] = '.'; // else replace with '.'
+      else str[pos] = '.'; // else use '.'
+      pos++;
+      if (pos == 8) pos += 2; // jump 2 spaces after 8th char in str
       nextAddress();
     }
-    char buf[80];
+    Serial.print(" ");
+    Serial.println(str);
+    /*
+    char buf[80]; // buffer for sprintf - used too much memory
     sprintf(buf, "%04x  %02x %02x %02x %02x %02x %02x %02x %02x  %02x %02x %02x %02x %02x %02x %02x %02x  %s",
             base + page * 0x100, data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7],
-            data[8], data[9], data[10], data[11], data[12], data[13], data[14], data[15], str);
-    Serial.println(buf);
+            data[8], data[9], data[10], data[11], data[12], data[13], data[14], data[15]);
+    Serial.println(buf);*/
   }
   packDeselectAndInput(); // deselect pack, then set pack data bus to input
 }
@@ -258,9 +274,7 @@ void printPageContents(byte page) { // set address to start of page and print co
 byte readAddr(word addr, bool output) { // set address, read byte, print if output true, and return value
 
   ArdDataPinsToInput(); // ensure Arduino data pins are set to input
-
   packOutputAndSelect(); // Enable pack data bus output, then select it
-
   setAddress(addr);
 
   byte dat = readByte(); // read Arduino data bus
@@ -279,80 +293,69 @@ byte readAddr(word addr, bool output) { // set address, read byte, print if outp
 //------------------------------------------------------------------------------------------------------
 
 word readAll(byte output) { // read all pack data, output if selected and return address of 1st free byte (with value 0xFF)
-  // output: 0 - none, 1 - print address & byte value, 2 - send bytes 
+  // output: 0 - none, 1 - print address & byte value, 2 - send bytes
+
+  word endAddr = read_dir(); // size pack - max is 64k
+  Serial.print("Size: 0x");
+  Serial.println(endAddr, HEX);
 
   ArdDataPinsToInput(); // ensure Arduino data pins are set to input
-
+  packOutputAndSelect(); // Enable pack data bus output then select it
   resetAddrCounter(); // reset counters
 
-  packOutputAndSelect(); // Enable pack data bus output then select it
-
   if (output == 2) { // tell PC to read data
-    Serial.println("XXRead"); // send "XXRead" to PC to tell it to receive read data
+    Serial.println(F("XXRead")); // send "XXRead" to PC to tell it to receive read data
+    Serial.write(0); // size bytes, highest is zero, so max is 64k
+    Serial.write(highByte(endAddr));
+    Serial.write(endAddr & 0xFF);
   }  
 
   bool quit = false;
-  byte end_chk = 0;
-  byte addr_low = 0; // only goes to 255, then wraps around to zero
   word addr_tot = 0; // total
   while  (quit == false) {
     byte dat = readByte(); // read Datapak byte at current address
     if (output == 1) { // print to serial
       char buf[15];
+      byte addr_low = addr_tot & 0xFF;
       sprintf(buf, "(Ard) %04x: %02x", addr_low, dat); // print address and data
       Serial.println(buf);
     }
-    if (output == 2) { // send to serial as data 
+    if (output == 2) { // send to serial as bytes
       Serial.write(dat); // send byte only
       unsigned long t = millis();
       while (!(Serial.available() > 0)) { // wait for data echo back, if no data: loop until there is, or timeout
         if (millis()-t > 1000) { // if timeout
-          for (byte i = 0; i <= numFFchk; i++) { // tell PC to stop reading data by sending numFFchk 0xFF bytes
-          Serial.write(0xFF);
-          }
-          Serial.println("(Ard) Timeout!");
+          Serial.println(F("(Ard) Timeout!"));
           return false;
         }
       } // end of while loop delay for data echo back from PC
       byte datr = Serial.read(); // read byte value from serial
       if (datr != dat) { // if echo datr doesn't match dat sent
-          for (byte i = 0; i <= numFFchk; i++) { // tell PC to stop reading data by sending numFFchk 0xFF bytes
-          Serial.write(0xFF); 
-          }
-        Serial.println("(Ard) Read data not verified by PC!");
+        delay(600); // delay to force timeout on PC !!
+        Serial.println(F("(Ard) Read data not verified by PC!"));
         return false;        
       }
     }
-    if (dat == 0xFF) {
-      end_chk++; // increase consecutive 0xFF count
-    }
-    else end_chk = 0; // reset 0xFF count if non 0xFF byte found
+    if (addr_tot >= endAddr) quit = true;
     if ((read_fixed_size == true) && (addr_tot >= read_pack_size)) quit = true; // quit if reach packSize and readFixedsize is true
-    if ((read_fixed_size == false) && (end_chk == numFFchk)) quit = true; // quit if numFFchk 0xFF bytes found, i.e. end of pack reached
-    if ((paged_addr == true) && (addr_low == 0xFF)) { // if using paged addressing and end of page reached, go to next page, addr_low will wrap around to zero
-      nextPage();
-    }
     if (addr_tot >= 0xFFFF) quit = true; // break loop if reach max size: (65536-1 bytes) 64k !!
     if (quit != true) {      
     nextAddress();
-    addr_low++;
     addr_tot++;
     }
   }
 
   packDeselectAndInput(); // deselect pack, then set pack data bus to input
-  if (read_fixed_size == true) return addr_tot;
-  else return addr_tot - (numFFchk - 1); // returns address of first 0xFF byte at end of pack
+  return addr_tot; // returns end address
 }
 
 //------------------------------------------------------------------------------------------------------
 
-bool writePakByteRampak(byte val) { // writes val to current address, returns true if written ok
+bool writePakByteRampak(byte val) { // writes val to current address, returns true if written ok - no longer used
 
   packDeselectAndInput(); // deselect pack, then set pack data bus to input (OE_N = high)
-
   ArdDataPinsToOutput(); // set Arduino data pins to output - can't do this with Datapak also output! OE_N must be high
-
+  
   writeByte(val); // put value on Arduino data bus
 
   delayShort();
@@ -363,11 +366,8 @@ bool writePakByteRampak(byte val) { // writes val to current address, returns tr
   delayShort(); 
 
   ArdDataPinsToInput(); // set Arduino data pins to input
-
   packOutputAndSelect(); // Enable pack data bus output then select it
-
   byte dat = readByte(); // read byte from datapak
-
   packDeselectAndInput(); // deselect pack, then set pack data bus to input
 
   if (dat == val) return true; // true if value written ok
@@ -391,7 +391,7 @@ bool writePakByte(byte val, bool output) { // writes val to current address, ret
     packDeselectAndInput(); // deselect pack, then set pack data bus to input (CE_N high, OE_N high)
   
     if (datapak_mode) {
-      if (output) Serial.println("(Ard) Datapak write VPP on");
+      if (output) Serial.println(F("(Ard) Datapak write VPP on"));
       digitalWrite(VPP, HIGH); // turn on VPP, 5V VCC is on already
       delayLong();      
     }
@@ -415,11 +415,10 @@ bool writePakByte(byte val, bool output) { // writes val to current address, ret
     if (datapak_mode) {
       digitalWrite(VPP, LOW); // turn off VPP, 5V VCC goes off later
       delayLong();
-      if (output) Serial.println("(Ard) Datapak write VPP off");
+      if (output) Serial.println(F("(Ard) Datapak write VPP off"));
     }
   
-    ArdDataPinsToInput(); // set Arduino data pins to input - for read
-    
+    ArdDataPinsToInput(); // set Arduino data pins to input - for read    
     packOutputAndSelect(); // Enable pack data bus output then select it
   
     dat = readByte(); // read byte from datapak
@@ -435,7 +434,7 @@ bool writePakByte(byte val, bool output) { // writes val to current address, ret
   packDeselectAndInput(); // deselect pack, then set pack data bus to input (CE_N high, OE_N high)
 
   if ((overwrite) == true && (dat == val) && (datapak_mode)) { // for non-CMOS EPROM write again to make sure - overwrite
-    if (output) Serial.println("(Ard) Datapak write VPP on");
+    if (output) Serial.println(F("(Ard) Datapak write VPP on"));
     digitalWrite(VPP, HIGH); // turn on VPP, 5V VCC is on already
     delayLong();
     ArdDataPinsToOutput(); // set Arduino data pins to output - can't do this with Datapak also output! OE_N must be high
@@ -447,7 +446,7 @@ bool writePakByte(byte val, bool output) { // writes val to current address, ret
     delayLong();  
     digitalWrite(VPP, LOW); // turn off VPP, 5V VCC goes off later
     delayLong();
-    if (output) Serial.println("(Ard) Datapak write VPP off");
+    if (output) Serial.println(F("(Ard) Datapak write VPP off"));
   }
   
   if (dat == val) return i; // return no. of cycles if value written ok
@@ -480,11 +479,8 @@ bool writePakSerial(word numBytes) { // write PC serial data to pack
     Serial.write(datw); // write data back to PC to verify and control data flow
     done_w = writePakByte(datw, /* output */ false); // write value to current memory address, no output because PC needs to verify data
     if (done_w == false) {
-      Serial.println("(Ard) Write byte failed!");
+      Serial.println(F("(Ard) Write byte failed!"));
       break;
-    }
-    if ((paged_addr == true) && (addr_low == 0xFF)) { // if using paged addressing and end of page reached, go to next page, addr_low will wrap around to zero
-      nextPage();
     }
     nextAddress();
     addr_low++;
@@ -496,26 +492,25 @@ bool writePakSerial(word numBytes) { // write PC serial data to pack
   }
     
   if (done_w == true) {
-  Serial.println("(Ard) Write done ok");
+  Serial.println(F("(Ard) Write done ok"));
   }
   return done_w;
 }
 
 //------------------------------------------------------------------------------------------------------
 
-void eraseBytes(word addr, word numBytes) { // erase numBytes, starting at addr
+void eraseBytes(word addr, word numBytes) { // erase numBytes, starting at addr - ony for rampaks
   setAddress(addr);
   bool done_ok = false;
   byte addr_low = addr & 0xFF; // low byte of addr
-  Serial.print("(Ard) Erasing:");
+  Serial.print(F("(Ard) Erasing:"));
   for (word i = 0; i <= numBytes; i++) { // loop through numBytes to write
-    done_ok = writePakByte(0xFF, /* output */ false); // write 0xFF
+    done_ok = writePakByte(0xFF, false /* no output */); // write 0xFF
     if (done_ok == false) {
-      Serial.println("(Ard) Erase failed!");
+      Serial.println(F("(Ard) Erase failed!"));
       break; // break out of for loop
     }
     if (addr_low == 0xFF) { // if end of page reached, go to next page, addr_low will wrap around to zero
-      if (paged_addr == true) nextPage(); // if using paged addressing go to next page
       Serial.print("."); // "." printed for each end of page
     }
     nextAddress(); 
@@ -523,14 +518,16 @@ void eraseBytes(word addr, word numBytes) { // erase numBytes, starting at addr
   }
   if (done_ok == true) {
   Serial.println("");
-  Serial.println("(Ard) Erased ok");
+  Serial.println(F("(Ard) Erased ok"));
   }
 }
 
 //------------------------------------------------------------------------------------------------------
 
 void WriteMainRec(bool output) { // write record to main
-  word endAddr = readAll(false); // false (0) - don't print output, just find 1st empty address - if read_fixed_size==True, will add recod there!!
+  word endAddr = read_dir();
+  Serial.print(F("Pack size (from dir) is: "));
+  Serial.println(endAddr, HEX);
   if (datapak_mode) {
     digitalWrite(PGM_N, LOW); // take PGM_N low - select & program - need PGM_N low for CE_N low if OE_N high
     program_low = true;
@@ -552,7 +549,7 @@ void WriteMainRec(bool output) { // write record to main
         sprintf(buf, "(Ard) %04x: %02d %02x %c", i, cycles, chr, chr);
         Serial.println(buf);
       }    
-      if (((endAddr & 0xFF) == 0xFF) & (paged_addr == true)) nextPage(); // if end of page reached, and paged_addr mode is true, go to next page
+      // if (((endAddr & 0xFF) == 0xFF) & (paged_addr == true)) nextPage(); // if end of page reached, and paged_addr mode is true, go to next page - moved to nextAddress()
       nextAddress(); // next address
       endAddr++; // increment address pointer
       if (done_ok == false) break;
@@ -561,21 +558,190 @@ void WriteMainRec(bool output) { // write record to main
       digitalWrite(PGM_N, HIGH); // take PGM_N high
       program_low = false;
     }
-    if (done_ok == true) Serial.println("(Ard) add record done successfully");
-    else Serial.println("(Ard) add record failed!");
+    if (done_ok == true) Serial.println(F("(Ard) add record done successfully"));
+    else Serial.println(F("(Ard) add record failed!"));
   }
-  else Serial.println("(Ard) no 0xFF byte to add record!");
+  else Serial.println(F("(Ard) no 0xFF byte to add record!"));
 }
 
 void printCommands() {
-  Serial.println("(Ard) Select a command:\ne - erase\nr - read pack\nw - write pack");
-  Serial.println("0 - print page 0\n1 - print page 1\n2 - print page 2\n3 - print page 3");
-  Serial.println("t - write TEST record to main\nm - datapak or rampak mode\n? - list commands\nx - exit");
+  Serial.println(F("(Ard) datapak_read_write_v1.3"));
+  printPackMode();
+  printAddrMode();
+  Serial.println(F("(Ard) Select a command:\ne - erase\nr - read pack\nw - write pack"));
+  Serial.println(F("0 - print page 0\n1 - print page 1\n2 - print page 2\n3 - print page 3"));
+  Serial.println(F("t - write TEST record to main\nr - rampak (or datapak) mode\nl - linear (or paged) addressing"));
+  Serial.println(F("i - print pack id byte flags\nd - directory and size pack\nb - check if pack is blank"));
+  Serial.println(F("? - list commands\nx - exit"));
 }
 
-void printMode() {
-  if (datapak_mode) Serial.println("(Ard) Now in Datapak mode");
-  else Serial.println("(Ard) Now in Rampak mode");
+void printPackMode() {
+  if (datapak_mode) Serial.println(F("(Ard) Now in Datapak mode (Arduino input pullups)")); // sets Arduino input pullups for datapack mode in ArdDataPinsToInput()
+  else Serial.println("(Ard) Now in Rampak mode (No Arduino input pullups)"); // no Arduino input pullups
+}
+
+void printAddrMode() {
+  if (paged_addr) Serial.println(F("(Ard) Now in paged addressing mode"));
+  else Serial.println(F("(Ard) Now in linear addressing mode"));
+}
+
+//------------------------------------------------------------------------------------------------------
+// pack sizing and id bytes - code originally from Matt Callow, but modified. https://github.com/mattcallow/psion_pak_reader
+//------------------------------------------------------------------------------------------------------
+
+byte read_next_byte() { // only used by Matt's code
+  nextAddress();
+  //current_address++; / now in nextAddress
+  byte data = readByte();
+  return data;
+}
+
+void incr_addr(word bytes) { // only used by Matt's code
+  for (word i=0;i<bytes;i++) {
+    nextAddress();
+  }
+}
+
+void print_pak_id() { // the first 2 bytes on a pack are the id and size bytes. id gives info about the pack
+  ArdDataPinsToInput(); // ensure Arduino data pins are set to input
+  packOutputAndSelect(); // Enable pack data bus output, then select it
+  resetAddrCounter();
+  byte id = readByte();
+  byte sz = read_next_byte();
+  byte pack_size = sz * 8;
+  packDeselectAndInput(); // deselect pack, then set pack data bus to input
+  Serial.println();
+  Serial.print("Id Flags: 0x");Serial.println(id, HEX);
+  Serial.print("0: ");Serial.println((id & 0x01)?"invalid":"valid"); // print bit flag value using conditional operator: (condition) ? true : false
+  Serial.print("1: ");Serial.println((id & 0x02)?"datapak":"rampak");
+  Serial.print("2: ");Serial.println((id & 0x04)?"paged":"linear");
+  Serial.print("3: ");Serial.println((id & 0x08)?"not write protected":"write protected");
+  Serial.print("4: ");Serial.println((id & 0x10)?"non-bootable":"bootable");
+  Serial.print("5: ");Serial.println((id & 0x20)?"copyable":"copy protected");
+  Serial.print("6: ");Serial.println((id & 0x40)?"standard":"flashpak or debug RAM pak");
+  Serial.print("7: ");Serial.println((id & 0x80)?"MK1":"MK2");
+  Serial.print("Size: "); Serial.print(pack_size); Serial.println(" kB");
+}
+
+word read_dir() { // read filenames and size pack
+    ArdDataPinsToInput(); // ensure Arduino data pins are set to input
+    packOutputAndSelect(); // Enable pack data bus output, then select it
+    resetAddrCounter();
+    uint8_t id = 0; // datafile id
+    Serial.println();
+    Serial.println(F("ADDR   TYPE         NAME      ID    Del? SIZE"));
+    incr_addr(9); // move past header to 10th byte
+    while(current_address < max_eprom_size) {
+      Serial.print("0x"); // print address (6 chars + space)
+      if (current_address+1<0x10) Serial.print("0");
+      if (current_address+1<0x100) Serial.print("0");
+      if (current_address+1<0x1000) Serial.print("0");
+      Serial.print(current_address+1, HEX);
+      Serial.print(" ");
+      
+      char short_record[10] = "         "; // 9 spaces + terminator
+      uint8_t rec_len = read_next_byte();
+      if (rec_len == 0xff) {
+        Serial.println(F("End of pack"));
+        break;
+      }
+      uint16_t jump = rec_len; // for jump, reduces when bytes read
+      uint16_t rec_size = rec_len; // for printing
+      uint8_t rec_type = read_next_byte();
+      if (rec_type == 0x80) {
+        jump = 256*read_next_byte() + read_next_byte();
+        Serial.print("Long record, length = 0x");
+        Serial.println(jump, HEX);
+        rec_size = jump;
+      } 
+      else {
+        if (rec_len > 9) rec_len = 9; // read first 8 chars of short record for printing
+        for (int i=0;i<=rec_len-1;i++) {
+          short_record[i] = read_next_byte();
+          jump--;
+        }
+
+      incr_addr(jump);
+     
+      Serial.print("0x"); // print rec type (4 chars)
+      if (rec_type < 0x10) Serial.print("0"); // pad with zero, if required
+      Serial.print(rec_type, HEX);
+      
+      switch (rec_type & 0x7f) { // print type (9 chars)
+        case 0x01:
+          Serial.print(" [Data]  ");
+          break;
+        case 0x02:
+          Serial.print(" [Diary] ");
+          break;
+        case 0x03:
+          Serial.print(" [OPL]   ");
+          break;
+        case 0x04:
+          Serial.print(" [Comms] ");
+          break;
+        case 0x05:
+          Serial.print(" [Sheet] ");
+          break;
+        case 0x06:
+          Serial.print(" [Pager] ");
+          break;
+        case 0x07:
+          Serial.print(" [Notes] ");
+          break;
+        case 0x10 ... 0x7E :
+          Serial.print(" [Rec]   ");// datafile record
+          break;
+        default:
+          Serial.print(" [misc]  ");// unknown type
+        }
+        Serial.print(short_record);
+        
+        if ((rec_type & 0x7f) == 1) {// datafile name
+          id = short_record[8];
+          Serial.print("  0x"); // id (4 chars + 3 spaces)
+          if (id<0x10) Serial.print("0"); // pad with zero, if required
+          Serial.print(id, HEX); // print value in hex
+          Serial.print(" ");
+        }
+        else Serial.print("      "); // record - (5 chars + space) - one less char than datafile name
+                
+        Serial.print((rec_type < 0x80) ? " Yes  " : " No   "); // deleted y/n? (6 chars)
+
+        Serial.print("0x"); // length (6 chars)
+        if (rec_size<0x10) Serial.print("0"); // pad with zero, if required
+        if (rec_size<0x100) Serial.print("0"); // pad with zero, if required
+        if (rec_size<0x1000) Serial.print("0"); // pad with zero, if required
+        Serial.println(rec_size, HEX);
+        //Serial.println();
+      }
+    }
+    packDeselectAndInput(); // deselect pack, then set pack data bus to input
+    return current_address;
+}
+
+bool blank_check() {
+  ArdDataPinsToInput(); // ensure Arduino data pins are set to input
+  packOutputAndSelect(); // Enable pack data bus output, then select it
+  resetAddrCounter();
+  Serial.println("\nBlank Check in 1k chunks '.'-blank 'x'-not blank");
+  bool blank = (readByte() == 0xff); // is 1st byte blank?
+  bool blank_1k = blank; // is this 1k blank?
+  //for (uint16_t i=1;(blank && (i <= max_eprom_size));i++) { // read bytes while blank or up to max_eprom_size
+  for (uint16_t i=1;i <= max_eprom_size;i++) { // read bytes up to max_eprom_size 
+    if (read_next_byte() != 0xff) {; // blank true if byte is 0xFF
+      blank = false;
+      blank_1k = false;
+    }
+    if ((i % 1024) == 0) { // every 1024 bytes print a dot (addr div 1024)
+      Serial.print(blank_1k ? "." : "x"); // dot if blank, x if not, using conditional operator: (condition) ? true : false
+      blank_1k = true; // reset blank for next 1k chunk
+    }
+  }
+  Serial.print("\nIs pack blank? : ");
+  Serial.println(blank ? "Yes" : "No");
+  packDeselectAndInput(); // deselect pack, then set pack data bus to input
+  return blank;
 }
 
 // ---------------------------------------------------------------------------
@@ -593,7 +759,7 @@ void setup() {
   
   ArdDataPinsToInput(); // set Arduino data pins to input - default - but makes sure
 
-  // set all control lines to input - pack will set default line states?
+  // set all control lines to input - pack will set default line states
   pinMode(SS_N, INPUT); // deselect first
   pinMode(OE_N, INPUT);  
   pinMode(PGM_N, INPUT);
@@ -602,7 +768,8 @@ void setup() {
 
   digitalWrite(LED_BUILTIN, HIGH); // turn the built in LED on to indicate waiting for Datapak & Enter
 
-  printMode();
+  printPackMode(); // datapak or rampak mode
+  printAddrMode(); // paged or linear addressing
 
   // wait for connected datapak
   Serial.println("(Ard) Please connect Rampak/Datapak, then press Enter...");
@@ -620,13 +787,13 @@ void setup() {
 
   // set output pins
 
-  pinMode(OE_N, OUTPUT);
-  digitalWrite(OE_N, HIGH); // disable outputs, keep pak as inputs - high Z, doesn't matter if pack OE is output before, as SS_N is high, due to pull up in pack. Can't do before set to output because OE has pull-downs in pack
+  pinMode(OE_N, OUTPUT); // set Ard pin to output - OE has pull-down in pack, setting OE_N high before pinMode would enable the Ard pull-up, and both pull-up & pull-down would give an ambiguous state
+  digitalWrite(OE_N, HIGH); // disable outputs, keep pak as inputs - high Z, doesn't matter if pack OE is output before SS, as SS_N is high due to pull-up in pack
 
   delayShort(); // delay to ensure pack output is disabled before going further
 
-  digitalWrite(SS_N, HIGH); // deselect - default pinMode is INPUT, setting this high enables INPUT pull-up, pull-up won't matter as SS_N also has pull-up in pack
-  pinMode(SS_N, OUTPUT); // seems to sometimes clear data bits at address 0, maybe OUTPUT pulls low when initialised? Maybe need to take OE_N HIGH first?
+  digitalWrite(SS_N, HIGH); // deselect - default pinMode is INPUT, setting this line high enables INPUT pull-up, pull-up won't matter as SS_N also has pull-up in pack
+  pinMode(SS_N, OUTPUT); // sometimes cleared data bits at address 0 (with rampack) if done before OE_N high, maybe OE_N pulled low when initialised? - OE_N high is now before SS_N high
   digitalWrite(SS_N, HIGH); // deselect - to make sure
 
   delayShort(); // delay to ensure pack is deselected before going further
@@ -669,23 +836,26 @@ void loop() { // command loop
         bool write_ok = false;
         Serial.println("(Ard) Write Serial data to pack");
         char str[] = "XXWrite"; // Check for "XXWrite" from PC to indicate following data is write data
-        if (Serial.find(str,7) == true) { // waits until timeout for Write to signal start of data
-          byte numBytes[2]; // byte array to store pack image size
+        if (Serial.find(str,7) == true) { // waits for "XXWrite" to signal start of data, or until timeout
+          byte numBytes[2] = {0}; // byte array to store pack image size
           byte bytes_read = Serial.readBytes(numBytes,2); // read 2 bytes for pack size, will need to be 3 if pack > 64kB !
-          word numBytesTotal = (numBytes[0] << 8) + numBytes[1]; // shift 1st byte 8 bits left for high byte and add 2nd byte as low byte
-          write_ok = writePakSerial(numBytesTotal); // write numBytes from file
-          char buf[50];
-          sprintf(buf, "(Ard) Pack size to write was: %04x bytes", numBytesTotal);
-          Serial.println(buf);      
+          if (bytes_read == 2) {
+            word numBytesTotal = (numBytes[0] << 8) + numBytes[1]; // shift 1st byte 8 bits left for high byte and add 2nd byte as low byte
+            write_ok = writePakSerial(numBytesTotal); // write numBytes from file
+            char buf[30];
+            sprintf(buf, "(Ard) Pack size to write was: %04x bytes", numBytesTotal);
+            Serial.println(buf); 
+          }
+          else Serial.println(F("(Ard) Wrong no. of size bytes sent!"));    
         }
-        else Serial.println("(Ard) No XXWrite to begin data");
-        if (write_ok == false) Serial.println("(Ard) Write failed!");        
+        else Serial.println(F("(Ard) No XXWrite to begin data"));
+        if (write_ok == false) Serial.println(F("(Ard) Write failed!"));        
         break;
       } 
       
       case 'r' : { // read pack and send to PC
         word endAddr = readAll(2); // 0 - no output, 1 - print data, 2 - dump data to serial
-        char buf[40];
+        char buf[30];
         sprintf(buf, "(Ard) Size of pack is: 0x%04x bytes", endAddr); // end address is same as size as address starts from 0, size starts from 1
         Serial.println(buf);
         break;
@@ -722,8 +892,31 @@ void loop() { // command loop
       }
       
       case 'm': {// toggle between datapak and rampak modes
-        datapak_mode = 1-datapak_mode;
-        printMode();
+        datapak_mode = 1-datapak_mode; // toggle datapak mode
+        printPackMode();
+        break;
+      }
+
+      case 'l': {// toggle between paged and linear addressing modes
+        paged_addr = 1-paged_addr; // toggle addressing mode
+        printAddrMode();
+        break;
+      }
+
+      case 'i': {// read pack id byte and print flag values
+        print_pak_id();
+        break;
+      }
+      
+      case 'd': {// read dir and size pack
+        word pack_size = read_dir();
+        Serial.print("pack size is: 0x");
+        Serial.println(pack_size, HEX);
+        break;
+      }
+
+      case 'b': {// check if pack is blank
+        blank_check();
         break;
       }
   
