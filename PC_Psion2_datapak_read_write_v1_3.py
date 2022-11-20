@@ -24,7 +24,8 @@ works with: Arduino_Psion2_datapak_read-write_v1_1.ino on Arduino
 
 v1.2 - Feb 2022 - added set_write_protect, update_checksum and fixedReadSize
 
-v1.3 - Oct 2022 - added sizing and blank check using code from Matt Callow https://github.com/mattcallow/psion_pak_reader
+v1.3 - Nov 2022 - added sizing and blank check using code from Matt Callow https://github.com/mattcallow/psion_pak_reader
+
 
 """
 
@@ -66,12 +67,13 @@ set_pack_size = False # if false, don't change pack size written to pack
 #pack_size_out = 2 # 2*8 = 16 kB
 pack_size_out = 4 # 4*8 = 32 kB
 
-infile = "rampak_colours.opk"
+# infile = "rampak_colours.opk"
 # infile = "comms42.opk"
+infile = "testpak.opk"
 
 print("Input filename:",infile)
 f_size = os.path.getsize(infile)
-print(f'(PC) File size (decimal) is: {f_size} bytes')
+print(f'(PC) File size is: {f_size} bytes, 0x{f_size:06x} bytes')
 
 # outfile = "linear_datapak_blank_test_7e9b.opk"
 outfile = "test.opk"
@@ -136,30 +138,43 @@ def WritePak():
                 print(f'0: ID byte: {n:02x}')
             if addr == 1:
                 if set_pack_size == True:
-                    print(f'1:Pack size was: {n*8:d} kB, now is: {pack_size_out*8:d} kB')
+                    print(f'1: Pack size was: {n*8:d} kB, now is: {pack_size_out*8:d} kB')
                     n = pack_size_out
                 else:
                     print(f'1: Pack size is: {n*8:d} kB')
      
-            # non-modified bytes:            
-            if addr == 2:
-                print(f'Timestamp:')
-                print(f'2: Year: {n+1900:d}') # +1900 for year
-            if addr == 3:
-                print(f'3: Month: {n+1:d}') # +1 for month
-            if addr == 4:
-                print(f'4: Day: {n+1:d}')# +1 for day
-            if addr == 5:
-                print(f'5: Hour: {n:d}') # hour is not +1
-            if addr == 6:
-                print(f'Free running counter at timestamp:')
-                FRH = n
-                print(f'6: High byte: 0x{FRH:02x}')
-            if addr == 7:
-                FRL = n
-                print(f'7: Low byte: 0x{FRL:02x}')
-                FRCT = (FRH<<8) + FRL                
-                print(f'Free running counter (Total): {FRCT:d} 0x{FRCT:04x}')
+            # non-modified bytes: - now includes both types of header - untested !!
+            
+            if addr >= 2 and addr <= 7:
+                if (data[0] & 0x10) != 0x10: # bootable pack
+                    bootable_header = {2:{'txt':'code type',0:'software',1:'hardware'},
+                                       3:{'txt':'id',0xc0:'RS232',0xbf:'bar code reader',0xbe:'swipe card reader',0x0a:'concise oxford spelling checker'},
+                                       4:{'txt':'version (binary coded decimal: 0xnm for version n.m'},
+                                       5:{'txt':'priority (can be same as id)'},
+                                       6:{'txt':'boot code pack address (high)'},
+                                       7:{'txt':'boot code pack address (low)'}}
+                    if addr >= 2 and addr <= 3:
+                        print(f'{addr:d}: {bootable_header[addr]["txt"]}: {bootable_header[addr][n]}')
+                    if addr >= 4:
+                        print(f'{addr:d}: {bootable_header[addr]["txt"]}: 0x{n:02x}')
+                    if addr == 7:
+                        print(f'boot code pack address: 0x{data[6]:02x}{n:02x}')
+                                   
+                else: # standard pack
+                    standard_header = {2:['Year at time of sizing was {:d}','n+1900'],
+                                       3:['Month at time of sizing was {:d}','n+1'],
+                                       4:['Day at time of sizing was {:d}','n+1'],
+                                       5:['Hour at time of sizing was {:d}','n'],
+                                       6:['Free Running Counter (High) at time of sizing was 0x{:02x}','n'],
+                                       7:['Free Running Counter (Low) at time of sizing was 0x{:02x}','n']}
+    
+                    print(f'{addr:d}:',standard_header[addr][0].format(eval(standard_header[addr][1])))
+                    
+                    if addr == 6: FRH = n
+                    if addr ==7:
+                        FRL = n
+                        FRCT = (FRH<<8) + FRL
+                        print(f"Free Running Counter (Total) at time of sizing was {FRCT:d} 0x{FRCT:04x}")
                 
             data.append(n) # store bytes for checksum, must include modified bytes
                   
@@ -199,7 +214,7 @@ def WritePak():
         addr += 1
         if addr >8 and addr % 0x08 == 0: # if remainder of addr div 8 is zero, newline
             print("") # newline
-        if addr >= f_in_size:
+        if addr > f_in_size:
             read_file = False
             print("") # newline at end of file
     f_in.close()

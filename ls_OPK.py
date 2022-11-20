@@ -9,14 +9,12 @@ Created: Sept 2022
 
 # import os
 
-
 # file1 = "comms42.opk"
 # file1 = "rampak_colours.opk"
 file1 = "testpak.opk"
 # file1 = "test.opk"
 
 dat = [] #  file data 
-
 
 # read file data
 
@@ -77,16 +75,16 @@ df_name = [] # list to store data file names
 while not end_of_pack:
     if i >= 0x10000: # limit read size here, if needed
         end_of_pack = True
-    rec_len = dat[i] # record length
+    rec_len = dat[i] # 1st byte is record length
     if rec_len == 0xFF: # end of pack
         skp = 0
         end_of_pack = True
         print(f'0x{i:04x} end of pack')
         break
-    rec_type = dat[i+1] # record type (only 2 main types: short or long)
+    rec_type = dat[i+1] # 2nd byte is record type (only 2 main types: short or long)
     r_type = rec_type | 0x80 # OR with 0x80, as could be deleted
     if rec_type == 0xFF: # bad short record
-        skp = 2 # ignore length if bad
+        skp = 2 # ignore length if bad, skip past length and type bytes
         bsr += 1
         print(f'0x{i:04x} bad short record')
     elif rec_type == 0x80: # long record - preceding short record has: deleted?, type, filename
@@ -101,9 +99,9 @@ while not end_of_pack:
             c = dat[i+2+sl]
             r_string += chr(c)
         if  rec_type >> 7: # shift right 7 bits to see if MSB is high - not deleted
-            r_del = 'n' # deleted?
+            r_del = 'n' # not deleted
         else:
-            r_del = 'y' # deleted?
+            r_del = 'y' # deleted
         if r_type == 0x81: # datafile so read name and file ID (0x90 for main)
             r_string = r_string[0:8] # file names are always 8 chars (range end value is exclusive)
             df_id.append(dat[i+10]) # store datafile ID

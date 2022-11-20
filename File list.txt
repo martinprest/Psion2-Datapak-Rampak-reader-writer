@@ -6,7 +6,7 @@ Psion2_datapak_read_write_schematic.PNG							Schematic v1 without datapak write
 Psion2_datapak_read_write_schematic_v2.PNG						Schematic v2 with datapak write circuit
 Psion2_open_thumb.jpg									Photo of Psion Organiser II LZ64 open
 README.md										Markdown description of project
-Read_OPK.py										Python code to read OPK files, gives: ID info, checksum and hex dump
+Read_OPK_v4.py										Python code to read OPK files, gives: ID info, checksum and hex dump
 datapak connector 1a.jpg								Photo of datapak connector from top
 datapak connector 2a.jpg								Photo of datapak connector from bottom
 datapak_pinout.PNG									Schematic showing datapak/rampak pin connections

@@ -458,8 +458,7 @@ bool writePakByte(byte val, bool output) { // writes val to current address, ret
 bool writePakSerial(word numBytes) { // write PC serial data to pack
   
   bool done_w = false;
-  word addr_tot = 0;
-  byte addr_low = 0;
+  word addr = 0;
 
   if (datapak_mode) {
     digitalWrite(PGM_N, LOW); // take PGM_N low - select & program - need PGM_N low for CE_N low if OE_N high
@@ -467,7 +466,7 @@ bool writePakSerial(word numBytes) { // write PC serial data to pack
   }
   resetAddrCounter(); // reset address counters, after PGM_N low
   
-  for (addr_tot = 0; addr_tot < numBytes; addr_tot++) { // addr_tot will be 1 less than numBytes as addr starts from zero, numBytes starts from 1
+  for (addr = 0; addr <= numBytes; addr++) {
     unsigned long t = millis();
     while (!(Serial.available() > 0)) { // if no data from PC, loop until there is, or timeout
       if (millis()-t > 1000) { // if timeout
@@ -483,7 +482,6 @@ bool writePakSerial(word numBytes) { // write PC serial data to pack
       break;
     }
     nextAddress();
-    addr_low++;
     }
 
   if (datapak_mode) {
@@ -591,13 +589,12 @@ void printAddrMode() {
 
 byte read_next_byte() { // only used by Matt's code
   nextAddress();
-  //current_address++; / now in nextAddress
   byte data = readByte();
   return data;
 }
 
-void incr_addr(word bytes) { // only used by Matt's code
-  for (word i=0;i<bytes;i++) {
+void incr_addr(uint16_t bytes) { // only used by Matt's code
+  for (uint16_t i=0;i<bytes;i++) { // increase address while i < bytes
     nextAddress();
   }
 }
@@ -649,72 +646,70 @@ word read_dir() { // read filenames and size pack
       uint16_t rec_size = rec_len; // for printing
       uint8_t rec_type = read_next_byte();
       if (rec_type == 0x80) {
-        jump = 256*read_next_byte() + read_next_byte();
+        jump = (read_next_byte()<<8) + read_next_byte();
         Serial.print("Long record, length = 0x");
         Serial.println(jump, HEX);
-        rec_size = jump;
       } 
       else {
         if (rec_len > 9) rec_len = 9; // read first 8 chars of short record for printing
-        for (int i=0;i<=rec_len-1;i++) {
+        for (uint8_t i=0;i<=rec_len-1;i++) {
           short_record[i] = read_next_byte();
           jump--;
         }
-
-      incr_addr(jump);
-     
-      Serial.print("0x"); // print rec type (4 chars)
-      if (rec_type < 0x10) Serial.print("0"); // pad with zero, if required
-      Serial.print(rec_type, HEX);
-      
-      switch (rec_type & 0x7f) { // print type (9 chars)
-        case 0x01:
-          Serial.print(" [Data]  ");
-          break;
-        case 0x02:
-          Serial.print(" [Diary] ");
-          break;
-        case 0x03:
-          Serial.print(" [OPL]   ");
-          break;
-        case 0x04:
-          Serial.print(" [Comms] ");
-          break;
-        case 0x05:
-          Serial.print(" [Sheet] ");
-          break;
-        case 0x06:
-          Serial.print(" [Pager] ");
-          break;
-        case 0x07:
-          Serial.print(" [Notes] ");
-          break;
-        case 0x10 ... 0x7E :
-          Serial.print(" [Rec]   ");// datafile record
-          break;
-        default:
-          Serial.print(" [misc]  ");// unknown type
-        }
-        Serial.print(short_record);
+         
+        Serial.print("0x"); // print rec type (4 chars)
+        if (rec_type < 0x10) Serial.print("0"); // pad with zero, if required
+        Serial.print(rec_type, HEX);
         
-        if ((rec_type & 0x7f) == 1) {// datafile name
-          id = short_record[8];
-          Serial.print("  0x"); // id (4 chars + 3 spaces)
-          if (id<0x10) Serial.print("0"); // pad with zero, if required
-          Serial.print(id, HEX); // print value in hex
-          Serial.print(" ");
-        }
-        else Serial.print("      "); // record - (5 chars + space) - one less char than datafile name
-                
-        Serial.print((rec_type < 0x80) ? " Yes  " : " No   "); // deleted y/n? (6 chars)
-
-        Serial.print("0x"); // length (6 chars)
-        if (rec_size<0x10) Serial.print("0"); // pad with zero, if required
-        if (rec_size<0x100) Serial.print("0"); // pad with zero, if required
-        if (rec_size<0x1000) Serial.print("0"); // pad with zero, if required
-        Serial.println(rec_size, HEX);
-        //Serial.println();
+        switch (rec_type & 0x7f) { // print type (9 chars)
+          case 0x01:
+            Serial.print(" [Data]  ");
+            break;
+          case 0x02:
+            Serial.print(" [Diary] ");
+            break;
+          case 0x03:
+            Serial.print(" [OPL]   ");
+            break;
+          case 0x04:
+            Serial.print(" [Comms] ");
+            break;
+          case 0x05:
+            Serial.print(" [Sheet] ");
+            break;
+          case 0x06:
+            Serial.print(" [Pager] ");
+            break;
+          case 0x07:
+            Serial.print(" [Notes] ");
+            break;
+          case 0x10 ... 0x7E :
+            Serial.print(" [Rec]   ");// datafile record
+            break;
+          default:
+            Serial.print(" [misc]  ");// unknown type
+          }
+          Serial.print(short_record);
+          
+          if (((rec_type & 0x7f) == 1) || ((rec_type & 0x7f) <= 7)){// filename, with id in last byte
+            id = short_record[8];
+            Serial.print("  0x"); // id (6 chars + 1 space)
+            if (id<0x10) Serial.print("0"); // pad with zero, if required
+            Serial.print(id, HEX); // print value in hex
+            Serial.print(" ");
+          }
+          else Serial.print("      "); // record - (5 chars + 1 space) - one less char than filename
+                  
+          Serial.print((rec_type < 0x80) ? " Yes  " : " No   "); // deleted y/n? (6 chars)
+  
+          Serial.print("0x"); // length (6 chars)
+          if (rec_size<0x10) Serial.print("0"); // pad with zero, if required
+          if (rec_size<0x100) Serial.print("0"); // pad with zero, if required
+          if (rec_size<0x1000) Serial.print("0"); // pad with zero, if required
+          Serial.println(rec_size, HEX);
+          //Serial.println();
       }
+      incr_addr(jump);
     }
     packDeselectAndInput(); // deselect pack, then set pack data bus to input
     return current_address;
