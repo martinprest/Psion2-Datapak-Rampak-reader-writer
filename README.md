@@ -27,8 +27,12 @@ Some of these commands can be used via the Arduino serial monitor, or similar te
 - r - reads data from the pack to the outfile on the PC. Reads until a certain number of 0xFF bytes are read (currently 3) to signify that the end of the pack has been reached.
 - w - writes data from the PC infile to the pack. Modifies the pack ID bytes (to set as a rampack or adjust pack size) if certain flags are set in the Python program.
 - 0, 1, 2 or 3 - (number n), prints the contents of page n (addresses: 0xn00 to 0xnFF) i.e. 256 bytes of the pack, as a hex dump.
-- t - adds a test record with the text "TEST" to the main data file.
+- t - adds a test record to the "main" data file.
 - m - swaps between rampak and datapak modes.
+- l - swaps between linear and paged addressing modes.
+- d - prints a directory of the pack contents.
+- i - reads the id byte of the pack.
+- b - checks to see if the pack is blank (datapaks need to be completely blank to write a new pack image).
 - x - exits the menu and allows the pack to be removed.
 
 # Components
