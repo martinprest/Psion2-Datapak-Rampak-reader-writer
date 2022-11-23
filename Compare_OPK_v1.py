@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 """
-OPK file reader
+Compare OPK files
 
-Created: March 2021
+Created: Nov 2022
 
 @author: martin
 """
 
 import os
-import sys
+# import sys
 
 file1 = "comms42.opk"
 # file2 = "comms42_test_7e9b.opk"
